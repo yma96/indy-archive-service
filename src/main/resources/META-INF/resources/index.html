@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Indy Repository Service</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/wingcss/0.1.8/wing.min.css"/>
+</head>
+<body ng-app="IndyRepo" ng-controller="IndyRepoController">
+
+<div class="container">
+    <h1>Indy Repository Service</h1>
+    <hr/>
+
+
+    <div class="cards">
+        <div class="card">
+            <h5 class="card-header">About</h5>
+            <p class="card-body"><b>Indy Archive Service</b> provides Indy historical archives management functions.</p>
+        </div>
+
+    </div>
+
+    <div style="position: fixed; bottom: 5%; text-align: center;">
+        <a target="_new" href="https://github.com/Commonjava/indy-reposiroty-service">Github Project</a></span> |
+        Version: {{ stats.version }} |
+        Commit ID: <a target="_new" href="http://github.com/Commonjava/pathmap-storage-service/commit/{{stats['commit-id']}}">{{ stats["commit-id"] }}</a> |
+        Built on {{ stats["timestamp"] }} by {{ stats["builder"] }}
+    </div>
+
+</div>
+
+</body>
+</html>
