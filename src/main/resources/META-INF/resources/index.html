@@ -114,15 +114,20 @@
 
 <div class="container">
     <div class="left-column">
-        <p class="lead"> Congratulations, you have created a new Quarkus cloud application.</p>
+        <p class="lead">Indy Repository Service</p>
 
-        <h2>What is this page?</h2>
+        <h2>About</h2>
 
+        <p><b>Indy Archive Service</b> provides Indy historical archives management functions.</p>
         <p>This page is served by Quarkus. The source is in
             <code>src/main/resources/META-INF/resources/index.html</code>.</p>
 
-        <h2>What are your next steps?</h2>
+        <h2>Github Project</h2>
 
+        <p><a target="_new" href="https://github.com/Commonjava/indy-reposiroty-service"></a></span> |
+            Version: {{ stats.version }} |
+            Commit ID: <a target="_new" href="http://github.com/Commonjava/pathmap-storage-service/commit/{{stats['commit-id']}}">{{ stats["commit-id"] }}</a> |
+            Built on {{ stats["timestamp"] }} by {{ stats["builder"] }}</p>
         <p>If not already done, run the application in <em>dev mode</em> using: <code>./mvnw compile quarkus:dev</code>.
         </p>
         <ul>
