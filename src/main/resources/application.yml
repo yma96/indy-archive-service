@@ -42,14 +42,3 @@ quarkus:
 
   swagger-ui:
     always-include: true
-
-
-
-
-
-
-
-
-
-
-

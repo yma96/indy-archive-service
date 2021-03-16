@@ -1,22 +1,39 @@
-# build
-*.tar.gz
-dependency-reduced-pom.xml
-scratch
-target
+#Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
 
-# eclipse
-.classpath
+# Eclipse
 .project
-.settings
+.classpath
+.settings/
+bin/
 
-# idea
+# IntelliJ
 .idea
+*.ipr
 *.iml
 *.iws
-*.ipr
 
-# mac
-*.DS_Store
+# NetBeans
+nb-configuration.xml
 
+# Visual Studio Code
+.vscode
+.factorypath
 
-*.dat
+# OSX
+.DS_Store
+
+# Vim
+*.swp
+*.swo
+
+# patch
+*.orig
+*.rej
+
+# Local environment
+.env
