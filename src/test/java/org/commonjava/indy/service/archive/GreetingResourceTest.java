@@ -1,4 +1,4 @@
-package org.commonjava.indy.service;
+package org.commonjava.indy.service.archive;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package org.commonjava.indy.service.config;
+package org.commonjava.indy.service.archive.config;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 

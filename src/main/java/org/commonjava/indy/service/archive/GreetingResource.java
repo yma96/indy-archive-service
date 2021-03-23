@@ -1,4 +1,4 @@
-package org.commonjava.indy.service;
+package org.commonjava.indy.service.archive;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
