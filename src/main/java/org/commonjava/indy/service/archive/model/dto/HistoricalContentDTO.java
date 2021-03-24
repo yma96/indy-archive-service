@@ -19,6 +19,9 @@ import java.util.Set;
 
 public class HistoricalContentDTO
 {
+    private String buildConfigId;
+
+    private String trackId;
 
     private Set<HistoricalContentEntryDTO> downloads;
 
@@ -26,9 +29,26 @@ public class HistoricalContentDTO
     {
     }
 
-    public HistoricalContentDTO( final Set<HistoricalContentEntryDTO> downloads )
-    {
+    public HistoricalContentDTO( String buildConfigId, String trackId, Set<HistoricalContentEntryDTO> downloads ) {
+        this.buildConfigId = buildConfigId;
+        this.trackId = trackId;
         this.downloads = downloads;
+    }
+
+    public String getBuildConfigId() {
+        return buildConfigId;
+    }
+
+    public void setBuildConfigId( String buildConfigId ) {
+        this.buildConfigId = buildConfigId;
+    }
+
+    public String getTrackId() {
+        return trackId;
+    }
+
+    public void setTrackId( String trackId ) {
+        this.trackId = trackId;
     }
 
     public Set<HistoricalContentEntryDTO> getDownloads()

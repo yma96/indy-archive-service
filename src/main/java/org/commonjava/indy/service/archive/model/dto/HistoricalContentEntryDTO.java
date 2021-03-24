@@ -20,17 +20,12 @@ import org.commonjava.indy.service.archive.model.StoreKey;
 public class HistoricalContentEntryDTO
         implements Comparable<HistoricalContentEntryDTO>
 {
+
 //    @ApiModelProperty( value = "The Indy key for the repository/group this where content was stored.",
 //            allowableValues = "remote:<name>, hosted:<name>, group:<name>" )
     private StoreKey storeKey;
 
     private String path;
-
-//    @ApiModelProperty( value = "If resolved from a remote repository, this is the origin URL, otherwise empty/null." )
-    private String originUrl;
-
-//    @ApiModelProperty( value = "URL to this path on the local Indy instance." )
-    private String localUrl;
 
     private String md5;
 
@@ -39,6 +34,11 @@ public class HistoricalContentEntryDTO
     private String sha1;
 
     private Long size;
+
+    //for shared-imports, this would be empty/null, for the ones don't promote into shared-imports, this would probably be given.
+    private String originUrl;
+
+    private String localUrl;
 
     public HistoricalContentEntryDTO()
     {
@@ -50,24 +50,24 @@ public class HistoricalContentEntryDTO
         this.path = path.startsWith( "/" ) ? path : "/" + path;
     }
 
-    public String getOriginUrl()
+    public StoreKey getStoreKey()
     {
-        return originUrl;
+        return storeKey;
     }
 
-    public void setOriginUrl( final String originUrl )
+    public void setStoreKey( final StoreKey storeKey )
     {
-        this.originUrl = originUrl;
+        this.storeKey = storeKey;
     }
 
-    public String getLocalUrl()
+    public String getPath()
     {
-        return localUrl;
+        return path;
     }
 
-    public void setLocalUrl( final String localUrl )
+    public void setPath( final String path )
     {
-        this.localUrl = localUrl;
+        this.path = path.startsWith( "/" ) ? path : "/" + path;
     }
 
     public String getMd5()
@@ -90,33 +90,14 @@ public class HistoricalContentEntryDTO
         this.sha256 = sha256;
     }
 
-    public void setSha1( final String sha1 )
-    {
-        this.sha1 = sha1;
-    }
-
     public String getSha1()
     {
         return sha1;
     }
-    public StoreKey getStoreKey()
-    {
-        return storeKey;
-    }
 
-    public void setStoreKey( final StoreKey storeKey )
+    public void setSha1( final String sha1 )
     {
-        this.storeKey = storeKey;
-    }
-
-    public String getPath()
-    {
-        return path;
-    }
-
-    public void setPath( final String path )
-    {
-        this.path = path.startsWith( "/" ) ? path : "/" + path;
+        this.sha1 = sha1;
     }
 
     public Long getSize()
@@ -127,6 +108,22 @@ public class HistoricalContentEntryDTO
     public void setSize( final Long size )
     {
         this.size = size;
+    }
+
+    public String getOriginUrl() {
+        return originUrl;
+    }
+
+    public void setOriginUrl( String originUrl ) {
+        this.originUrl = originUrl;
+    }
+
+    public String getLocalUrl() {
+        return localUrl;
+    }
+
+    public void setLocalUrl( String localUrl ) {
+        this.localUrl = localUrl;
     }
 
     @Override

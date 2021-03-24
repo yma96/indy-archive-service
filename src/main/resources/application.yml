@@ -42,3 +42,7 @@ quarkus:
 
   swagger-ui:
     always-include: true
+
+pre-seed:
+  indy-server: indy-master-devel.psi.redhat.com
+  storageDir: /data
