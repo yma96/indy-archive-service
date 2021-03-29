@@ -15,21 +15,19 @@
  */
 package org.commonjava.indy.service.archive.model.dto;
 
-import java.util.Set;
-
 public class HistoricalContentDTO
 {
     private String buildConfigId;
 
     private String trackId;
 
-    private Set<HistoricalContentEntryDTO> downloads;
+    private HistoricalEntryDTO[] downloads;
 
     public HistoricalContentDTO()
     {
     }
 
-    public HistoricalContentDTO( String buildConfigId, String trackId, Set<HistoricalContentEntryDTO> downloads ) {
+    public HistoricalContentDTO( String buildConfigId, String trackId, HistoricalEntryDTO[] downloads ) {
         this.buildConfigId = buildConfigId;
         this.trackId = trackId;
         this.downloads = downloads;
@@ -51,13 +49,24 @@ public class HistoricalContentDTO
         this.trackId = trackId;
     }
 
-    public Set<HistoricalContentEntryDTO> getDownloads()
+    public HistoricalEntryDTO[] getDownloads()
     {
         return downloads;
     }
 
-    public void setDownloads( final Set<HistoricalContentEntryDTO> downloads )
+    public void setDownloads( final HistoricalEntryDTO[] downloads )
     {
         this.downloads = downloads;
+    }
+
+    @Override
+    public String toString() {
+        String s1 = String.format( "%s, %s, %s", buildConfigId, trackId, downloads.length );
+        String s2 = "";
+        for ( HistoricalEntryDTO dto : downloads )
+        {
+            s2 = s2 + String.format( "[%s, %s, %s]", dto.getStoreKey(), dto.getPath(), dto.getLocalUrl() );
+        }
+        return s1 + s2;
     }
 }

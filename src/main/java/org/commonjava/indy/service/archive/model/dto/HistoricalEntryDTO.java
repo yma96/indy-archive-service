@@ -17,8 +17,8 @@ package org.commonjava.indy.service.archive.model.dto;
 
 import org.commonjava.indy.service.archive.model.StoreKey;
 
-public class HistoricalContentEntryDTO
-        implements Comparable<HistoricalContentEntryDTO>
+public class HistoricalEntryDTO
+        implements Comparable<HistoricalEntryDTO>
 {
 
 //    @ApiModelProperty( value = "The Indy key for the repository/group this where content was stored.",
@@ -40,11 +40,11 @@ public class HistoricalContentEntryDTO
 
     private String localUrl;
 
-    public HistoricalContentEntryDTO()
+    public HistoricalEntryDTO()
     {
     }
 
-    public HistoricalContentEntryDTO( final StoreKey storeKey, final String path )
+    public HistoricalEntryDTO( final StoreKey storeKey, final String path )
     {
         this.storeKey = storeKey;
         this.path = path.startsWith( "/" ) ? path : "/" + path;
@@ -127,7 +127,7 @@ public class HistoricalContentEntryDTO
     }
 
     @Override
-    public int compareTo( final HistoricalContentEntryDTO other )
+    public int compareTo( final HistoricalEntryDTO other )
     {
         int comp = storeKey.compareTo( other.getStoreKey() );
         if ( comp == 0 )
@@ -163,7 +163,7 @@ public class HistoricalContentEntryDTO
         {
             return false;
         }
-        final HistoricalContentEntryDTO other = ( HistoricalContentEntryDTO ) obj;
+        final HistoricalEntryDTO other = ( HistoricalEntryDTO ) obj;
         if ( path == null )
         {
             if ( other.path != null )
@@ -195,5 +195,15 @@ public class HistoricalContentEntryDTO
     {
         return String.format( "HistoricalContentEntryDTO [\n  storeKey=%s\n path=%s\n  originUrl=%s\n  localUrl=%s\n  size=%d\n md5=%s\n  sha256=%s\n]",
                 storeKey, path, originUrl, localUrl, size, md5, sha256 );
+    }
+
+    public String getStorePath()
+    {
+        return String.format( "/%s/%s/%s", storeKey.getPackageType(), storeKey.getType(), storeKey.getName() );
+    }
+
+    public String getFileStorePath()
+    {
+        return String.format( "/%s/%s/%s%s", storeKey.getPackageType(), storeKey.getType(), storeKey.getName(), path );
     }
 }
