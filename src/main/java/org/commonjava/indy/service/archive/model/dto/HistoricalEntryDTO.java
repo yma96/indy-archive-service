@@ -193,7 +193,7 @@ public class HistoricalEntryDTO
     @Override
     public String toString()
     {
-        return String.format( "HistoricalContentEntryDTO [\n  storeKey=%s\n path=%s\n  originUrl=%s\n  localUrl=%s\n  size=%d\n md5=%s\n  sha256=%s\n]",
+        return String.format( "HistoricalEntryDTO [\n  storeKey=%s\n path=%s\n  originUrl=%s\n  localUrl=%s\n  size=%d\n md5=%s\n  sha256=%s\n]",
                 storeKey, path, originUrl, localUrl, size, md5, sha256 );
     }
 
