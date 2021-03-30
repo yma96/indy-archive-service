@@ -145,10 +145,7 @@ public class ArchiveController {
 
         logger.info( "Writing archive zip to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
-        List<File> artifacts = Files.walk( Paths.get( contentBuildDir ) )
-                .filter( Files::isRegularFile )
-                .map( Path::toFile )
-                .collect( Collectors.toList() );
+        List<File> artifacts = walkedAllFiles( contentBuildDir );
 
         byte[] buffer = new byte[1024];
         for ( File artifact : artifacts )
@@ -188,6 +185,50 @@ public class ArchiveController {
             target.getParentFile().mkdirs();
             part.renameTo( target );
         }
+    }
+
+    public File getArchiveInputStream( final String buildConfigId ) throws IOException
+    {
+        String target = String.format( "%s/%s", archiveDir, buildConfigId );
+        File targetDir = new File( target );
+        if ( !targetDir.exists() )
+        {
+            return null;
+        }
+
+        List<File> contents = walkedAllFiles( target );
+        for ( File content : contents )
+        {
+            if ( content.getName().endsWith( ARCHIVE_SUFFIX ) )
+            {
+                return content;
+            }
+        }
+        return null;
+    }
+
+    public void deleteArchive( final String buildConfigId ) throws IOException
+    {
+        String target = String.format( "%s/%s", archiveDir, buildConfigId );
+        File targetDir = new File( target );
+        if ( targetDir.exists() )
+        {
+            List<File> contents = walkedAllFiles( target );
+            for ( File content : contents )
+            {
+                content.delete();
+            }
+            return;
+        }
+    }
+
+    private List<File> walkedAllFiles ( String path ) throws IOException
+    {
+        List<File> contents = Files.walk( Paths.get( path ) )
+                .filter( Files::isRegularFile )
+                .map( Path::toFile )
+                .collect( Collectors.toList() );
+        return contents;
     }
 
     private void fileTrackedContent( String contentBuildDir, final HistoricalContentDTO content )
