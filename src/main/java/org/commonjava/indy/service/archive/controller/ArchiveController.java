@@ -77,6 +77,12 @@ public class ArchiveController {
 
     private final String ARCHIVE_DIR = "/archive";
 
+    private final String ARCHIVE_SUFFIX = ".tar.gz";
+
+    private final String PART_SUFFIX = ".part";
+
+    private final String PART_ARCHIVE_SUFFIX = PART_SUFFIX + ARCHIVE_SUFFIX;
+
     @PostConstruct
     public void init()
     {
@@ -112,7 +118,7 @@ public class ArchiveController {
 
         String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
         File dir = new File( contentBuildDir );
-        dir.deleteOnExit();
+        dir.delete();
 
         fileTrackedContent( contentBuildDir, content );
 
@@ -134,7 +140,7 @@ public class ArchiveController {
         }
 
         String archiveBuildDir = String.format( "%s/%s", archiveDir, content.getBuildConfigId() );
-        final File part = new File( archiveBuildDir, content.getTrackId() + ".part.tar.gz" );
+        final File part = new File( archiveBuildDir, content.getTrackId() + PART_ARCHIVE_SUFFIX );
         part.getParentFile().mkdirs();
 
         logger.info( "Writing archive zip to: '{}'", part.getAbsolutePath() );
@@ -168,7 +174,7 @@ public class ArchiveController {
         {
             Files.delete( artifact.toPath() );
         }
-        dir.deleteOnExit();
+        dir.delete();
         return part;
     }
 
@@ -177,8 +183,8 @@ public class ArchiveController {
         if ( part != null && part.exists() )
         {
             String archiveBuildDir = String.format( "%s/%s", archiveDir, buildConfigId );
-            final File target = new File( archiveBuildDir, trackId + ".tar.gz" );
-            target.deleteOnExit();
+            final File target = new File( archiveBuildDir, trackId + ARCHIVE_SUFFIX );
+            target.delete();
             target.getParentFile().mkdirs();
             part.renameTo( target );
         }
@@ -211,7 +217,7 @@ public class ArchiveController {
             final File target = new File( contentBuildDir, filePath );
             final File dir = target.getParentFile();
             dir.mkdirs();
-            final File part = new File( dir, target.getName() + ".part" );
+            final File part = new File( dir, target.getName() + PART_SUFFIX );
 
             final HttpClientContext context = new HttpClientContext();
             context.setCookieStore( cookieStore );
