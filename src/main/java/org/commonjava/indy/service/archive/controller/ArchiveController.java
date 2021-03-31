@@ -46,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -58,6 +59,16 @@ import java.util.zip.ZipOutputStream;
 public class ArchiveController {
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
+
+    private final String CONTENT_DIR = "/content";
+
+    private final String ARCHIVE_DIR = "/archive";
+
+    private final String ARCHIVE_SUFFIX = ".tar.gz";
+
+    private final String PART_SUFFIX = ".part";
+
+    private final String PART_ARCHIVE_SUFFIX = PART_SUFFIX + ARCHIVE_SUFFIX;
 
     @Inject
     PreSeedConfig preSeedConfig;
@@ -72,16 +83,6 @@ public class ArchiveController {
     private String contentDir;
 
     private String archiveDir;
-
-    private final String CONTENT_DIR = "/content";
-
-    private final String ARCHIVE_DIR = "/archive";
-
-    private final String ARCHIVE_SUFFIX = ".tar.gz";
-
-    private final String PART_SUFFIX = ".part";
-
-    private final String PART_ARCHIVE_SUFFIX = PART_SUFFIX + ARCHIVE_SUFFIX;
 
     @PostConstruct
     public void init()
@@ -129,37 +130,37 @@ public class ArchiveController {
         }
     }
 
-    public File generateArchiveZip( final HistoricalContentDTO content )
+    public Optional<File> generateArchive( final HistoricalContentDTO content )
             throws IOException
     {
         String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
         File dir = new File( contentBuildDir );
         if ( !dir.exists() )
         {
-            return null;
+            return Optional.empty();
         }
 
         String archiveBuildDir = String.format( "%s/%s", archiveDir, content.getBuildConfigId() );
         final File part = new File( archiveBuildDir, content.getTrackId() + PART_ARCHIVE_SUFFIX );
         part.getParentFile().mkdirs();
 
-        logger.info( "Writing archive zip to: '{}'", part.getAbsolutePath() );
+        logger.info( "Writing archive to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
         List<File> artifacts = walkedAllFiles( contentBuildDir );
 
         byte[] buffer = new byte[1024];
         for ( File artifact : artifacts )
         {
-            logger.trace( "Adding {} to zip{} in folder {}", artifact.getName(), content.getTrackId(), archiveBuildDir );
+            logger.trace( "Adding {} to archive {} in folder {}", artifact.getName(), content.getTrackId(), archiveBuildDir );
             FileInputStream fis = new FileInputStream( artifact );
             String entryPath = artifact.getPath().split( contentBuildDir )[1];
 
             zip.putNextEntry( new ZipEntry( entryPath ) );
 
             int length;
-            while ((length = fis.read(buffer)) > 0)
+            while ( ( length = fis.read(buffer ) ) > 0 )
             {
-                zip.write(buffer, 0, length);
+                zip.write( buffer, 0, length );
             }
             zip.closeEntry();
             fis.close();
@@ -172,28 +173,29 @@ public class ArchiveController {
             Files.delete( artifact.toPath() );
         }
         dir.delete();
-        return part;
+        return Optional.of( part );
     }
 
     public void renderArchive( File part, final String buildConfigId, final String trackId )
     {
-        if ( part != null && part.exists() )
+        if ( !part.exists() )
         {
-            String archiveBuildDir = String.format( "%s/%s", archiveDir, buildConfigId );
-            final File target = new File( archiveBuildDir, trackId + ARCHIVE_SUFFIX );
-            target.delete();
-            target.getParentFile().mkdirs();
-            part.renameTo( target );
+            return;
         }
+        String archiveBuildDir = String.format( "%s/%s", archiveDir, buildConfigId );
+        final File target = new File( archiveBuildDir, trackId + ARCHIVE_SUFFIX );
+        target.delete();
+        target.getParentFile().mkdirs();
+        part.renameTo( target );
     }
 
-    public File getArchiveInputStream( final String buildConfigId ) throws IOException
+    public Optional<File> getArchiveInputStream( final String buildConfigId ) throws IOException
     {
         String target = String.format( "%s/%s", archiveDir, buildConfigId );
         File targetDir = new File( target );
         if ( !targetDir.exists() )
         {
-            return null;
+            return Optional.empty();
         }
 
         List<File> contents = walkedAllFiles( target );
@@ -201,10 +203,10 @@ public class ArchiveController {
         {
             if ( content.getName().endsWith( ARCHIVE_SUFFIX ) )
             {
-                return content;
+                return Optional.of( content );
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     public void deleteArchive( final String buildConfigId ) throws IOException
@@ -235,14 +237,13 @@ public class ArchiveController {
     {
         File tracked = new File( contentBuildDir, content.getTrackId() );
         tracked.getParentFile().mkdirs();
-
         try
         {
             String json = objectMapper.writeValueAsString( content );
             FileOutputStream out = new FileOutputStream( tracked );
             IOUtils.copy( new ByteArrayInputStream( json.getBytes() ), out );
         }
-        catch ( IOException e )
+        catch ( final IOException e )
         {
             final String message = "Failed to file tracked content.";
             logger.error( message, e );

@@ -27,7 +27,7 @@ import java.util.Map;
 @ApplicationScoped
 public class HistoricalContentListReader
 {
-    private final String INDY_API = "/api/content";
+    private final String CONTENT_REST_BASE_PATH = "/api/content";
 
     @Inject
     PreSeedConfig preSeedConfig;
@@ -50,7 +50,7 @@ public class HistoricalContentListReader
                 // ensure every entry has an available localUrl
                 buildDownloadUrl( download );
 
-                // local url would be more reliable to download artifact
+                // local url would be preferred to download artifact
                 String url = download.getLocalUrl();
                 if ( url == null )
                 {
@@ -72,7 +72,7 @@ public class HistoricalContentListReader
         {
             return null;
         }
-        String downloadUrl = String.format( "%s%s%s%s", baseUrl, INDY_API, download.getStorePath(), download.getPath() );
+        String downloadUrl = String.format( "%s%s%s%s", baseUrl, CONTENT_REST_BASE_PATH, download.getStorePath(), download.getPath() );
         download.setLocalUrl( downloadUrl );
         return downloadUrl;
     }

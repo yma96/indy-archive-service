@@ -61,12 +61,14 @@ public class HistoricalContentDTO
 
     @Override
     public String toString() {
-        String s1 = String.format( "%s, %s, %s", buildConfigId, trackId, downloads.length );
-        String s2 = "";
-        for ( HistoricalEntryDTO dto : downloads )
+        StringBuilder builder = new StringBuilder();
+        String content = String.format( "HistoricalContentDTO [\n  buildConfigId=%s\n  trackId=%s\n]\n", buildConfigId, trackId );
+        builder.append( content );
+        for ( HistoricalEntryDTO entry : downloads )
         {
-            s2 = s2 + String.format( "[%s, %s, %s]", dto.getStoreKey(), dto.getPath(), dto.getLocalUrl() );
+            builder.append( entry.toString() );
+            builder.append( "\n" );
         }
-        return s1 + s2;
+        return builder.toString();
     }
 }

@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Optional;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
@@ -58,6 +59,8 @@ import static javax.ws.rs.core.Response.noContent;
 @Path( "/api/archive" )
 public class ArchiveManageResources
 {
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
+
     @Inject
     ObjectMapper objectMapper;
 
@@ -67,7 +70,8 @@ public class ArchiveManageResources
     @Inject
     ArchiveController controller;
 
-    private final Logger logger = LoggerFactory.getLogger( getClass() );
+    @Inject
+    ResponseHelper responseHelper;
 
     @Operation( description = "Generate archive based on tracked content" )
     @APIResponse( responseCode = "201", description = "The archive is created successfully" )
@@ -78,42 +82,44 @@ public class ArchiveManageResources
     @Consumes( APPLICATION_JSON )
     public Response create( final @Context UriInfo uriInfo, final @Context HttpRequest request )
     {
-        String json = null;
-        HistoricalContentDTO content = null;
-        File zip = null;
+        HistoricalContentDTO content;
         try
         {
-            json = IOUtils.toString( request.getInputStream(), Charset.defaultCharset() );
+            String json = IOUtils.toString( request.getInputStream(), Charset.defaultCharset() );
             content = objectMapper.readValue( json, HistoricalContentDTO.class );
+            if ( content == null )
+            {
+                final String message = "Failed to read historical content which is empty.";
+                logger.error( message );
+                return responseHelper.fromResponse( message );
+            }
         }
         catch ( final IOException e )
         {
             final String message = "Failed to read historical content file from request body.";
             logger.error( message, e );
-            ResponseBuilder builder = Response.status( Status.INTERNAL_SERVER_ERROR ).type( MediaType.TEXT_PLAIN ).entity( message );
-            return builder.build();
+            return responseHelper.fromResponse( message );
         }
-        if ( content != null )
-        {
-            Map<String, String> downloadPaths = reader.readPaths( content );
-            controller.downloadArtifacts( downloadPaths, content );
-        }
+
+        Map<String, String> downloadPaths = reader.readPaths( content );
+        controller.downloadArtifacts( downloadPaths, content );
         try
         {
-            zip = controller.generateArchiveZip( content );
+            Optional<File> archive = controller.generateArchive( content );
+            if ( archive.isEmpty() )
+            {
+                final String message = "Failed to get downloaded contents for archive.";
+                logger.error( message );
+                return responseHelper.fromResponse( message );
+            }
+            controller.renderArchive( archive.get(), content.getBuildConfigId(), content.getTrackId() );
         }
         catch ( final IOException e )
         {
             final String message = "Failed to generate historical archive from content.";
             logger.error( message, e );
-            ResponseBuilder builder = Response.status( Status.INTERNAL_SERVER_ERROR ).type( MediaType.TEXT_PLAIN ).entity( message );
-            return builder.build();
+            return responseHelper.fromResponse( message );
         }
-        finally
-        {
-            controller.renderArchive( zip, content.getBuildConfigId(), content.getTrackId() );
-        }
-
         return Response.created( uriInfo.getRequestUri() ).build();
     }
 
@@ -128,21 +134,20 @@ public class ArchiveManageResources
         Response response = null;
         try
         {
-            File target = controller.getArchiveInputStream( buildConfigId );
-            if ( target != null )
+            Optional<File> target = controller.getArchiveInputStream( buildConfigId );
+            if ( target.isPresent() )
             {
-                InputStream inputStream = FileUtils.openInputStream( target );
+                InputStream inputStream = FileUtils.openInputStream( target.get() );
                 final ResponseBuilder builder = Response.ok( new TransferStreamingOutput( inputStream ) );
 
                 response = buildWithHeader( builder, buildConfigId );
             }
         }
-        catch ( IOException e )
+        catch ( final IOException e )
         {
             final String message = "Failed to get historical archive for build config Id " + buildConfigId;
             logger.error( message, e );
-            ResponseBuilder builder = Response.status( Status.INTERNAL_SERVER_ERROR ).type( MediaType.TEXT_PLAIN ).entity( message );
-            return builder.build();
+            return responseHelper.fromResponse( message );
         }
         return response;
     }
@@ -157,12 +162,11 @@ public class ArchiveManageResources
         {
             controller.deleteArchive( buildConfigId );
         }
-        catch ( IOException e )
+        catch ( final IOException e )
         {
             final String message = "Failed to delete historical archive for build config Id " + buildConfigId;
             logger.error( message, e );
-            ResponseBuilder builder = Response.status( Status.INTERNAL_SERVER_ERROR ).type( MediaType.TEXT_PLAIN ).entity( message );
-            return builder.build();
+            return responseHelper.fromResponse( message );
         }
         return noContent().build();
     }
