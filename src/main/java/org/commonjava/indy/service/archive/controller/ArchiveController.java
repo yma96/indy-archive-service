@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -113,9 +114,10 @@ public class ArchiveController {
     }
 
     public void downloadArtifacts( final Map<String, String> downloadPaths, final HistoricalContentDTO content )
+            throws InterruptedException, ExecutionException
     {
         BasicCookieStore cookieStore = new BasicCookieStore();
-        ExecutorCompletionService executor = new ExecutorCompletionService<>( executorService );
+        ExecutorCompletionService<Boolean> executor = new ExecutorCompletionService<>( executorService );
 
         String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
         File dir = new File( contentBuildDir );
@@ -128,6 +130,20 @@ public class ArchiveController {
             String filePath = downloadPaths.get( path );
             executor.submit( download( contentBuildDir, path, filePath, cookieStore ) );
         }
+        int success = 0;
+        int failed = 0;
+        for ( int i = 0; i < downloadPaths.size(); i++ )
+        {
+            if ( executor.take().get() )
+            {
+                success++;
+            }
+            else
+            {
+                failed++;
+            }
+        }
+        logger.info( "Artifacts download completed, success:{}, failed:{}", success, failed );
     }
 
     public Optional<File> generateArchive( final HistoricalContentDTO content )

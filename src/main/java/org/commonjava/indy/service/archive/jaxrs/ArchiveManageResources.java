@@ -51,6 +51,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
@@ -101,10 +102,10 @@ public class ArchiveManageResources
             return responseHelper.fromResponse( message );
         }
 
-        Map<String, String> downloadPaths = reader.readPaths( content );
-        controller.downloadArtifacts( downloadPaths, content );
         try
         {
+            Map<String, String> downloadPaths = reader.readPaths( content );
+            controller.downloadArtifacts( downloadPaths, content );
             Optional<File> archive = controller.generateArchive( content );
             if ( archive.isEmpty() )
             {
@@ -113,6 +114,18 @@ public class ArchiveManageResources
                 return responseHelper.fromResponse( message );
             }
             controller.renderArchive( archive.get(), content.getBuildConfigId(), content.getTrackId() );
+        }
+        catch ( InterruptedException e )
+        {
+            final String message = "Artifacts downloading is interrupted.";
+            logger.error( message, e );
+            return responseHelper.fromResponse( message );
+        }
+        catch ( final ExecutionException e )
+        {
+            final String message = "Artifacts download execution manager failed.";
+            logger.error( message, e );
+            return responseHelper.fromResponse( message );
         }
         catch ( final IOException e )
         {
