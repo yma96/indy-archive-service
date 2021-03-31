@@ -19,17 +19,14 @@ public class HistoricalContentDTO
 {
     private String buildConfigId;
 
-    private String trackId;
-
     private HistoricalEntryDTO[] downloads;
 
     public HistoricalContentDTO()
     {
     }
 
-    public HistoricalContentDTO( String buildConfigId, String trackId, HistoricalEntryDTO[] downloads ) {
+    public HistoricalContentDTO( String buildConfigId, HistoricalEntryDTO[] downloads ) {
         this.buildConfigId = buildConfigId;
-        this.trackId = trackId;
         this.downloads = downloads;
     }
 
@@ -39,14 +36,6 @@ public class HistoricalContentDTO
 
     public void setBuildConfigId( String buildConfigId ) {
         this.buildConfigId = buildConfigId;
-    }
-
-    public String getTrackId() {
-        return trackId;
-    }
-
-    public void setTrackId( String trackId ) {
-        this.trackId = trackId;
     }
 
     public HistoricalEntryDTO[] getDownloads()
@@ -62,7 +51,7 @@ public class HistoricalContentDTO
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        String content = String.format( "HistoricalContentDTO [\n  buildConfigId=%s\n  trackId=%s\n]\n", buildConfigId, trackId );
+        String content = String.format( "HistoricalContentDTO [\n  buildConfigId=%s\n]\n", buildConfigId );
         builder.append( content );
         for ( HistoricalEntryDTO entry : downloads )
         {

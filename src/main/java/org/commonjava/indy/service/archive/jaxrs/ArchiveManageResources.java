@@ -113,7 +113,7 @@ public class ArchiveManageResources
                 logger.error( message );
                 return responseHelper.fromResponse( message );
             }
-            controller.renderArchive( archive.get(), content.getBuildConfigId(), content.getTrackId() );
+            controller.renderArchive( archive.get(), content.getBuildConfigId() );
         }
         catch ( InterruptedException e )
         {
