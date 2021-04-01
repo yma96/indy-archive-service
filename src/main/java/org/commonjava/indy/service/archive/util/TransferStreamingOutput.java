@@ -41,9 +41,8 @@ public class TransferStreamingOutput
     @Override
     public void write( OutputStream out ) throws IOException, WebApplicationException
     {
-        try
+        try ( CountingOutputStream cout = new CountingOutputStream( out ) )
         {
-            CountingOutputStream cout = new CountingOutputStream( out );
             IOUtils.copy( stream, cout );
             logger.trace( "Wrote: {} bytes", cout.getByteCount() );
         }

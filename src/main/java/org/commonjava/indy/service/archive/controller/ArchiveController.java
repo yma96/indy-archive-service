@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -253,15 +254,21 @@ public class ArchiveController {
         File tracked = new File( contentBuildDir, content.getBuildConfigId() );
         tracked.getParentFile().mkdirs();
 
+        ByteArrayInputStream input = null;
         try ( FileOutputStream out = new FileOutputStream( tracked ) )
         {
             String json = objectMapper.writeValueAsString( content );
-            IOUtils.copy( new ByteArrayInputStream( json.getBytes() ), out );
+            input = new ByteArrayInputStream( json.getBytes() );
+            IOUtils.copy( input, out );
         }
         catch ( final IOException e )
         {
             final String message = "Failed to file tracked content.";
             logger.error( message, e );
+        }
+        finally
+        {
+            IOUtils.closeQuietly( input, null );
         }
     }
 
@@ -279,6 +286,7 @@ public class ArchiveController {
             final HttpClientContext context = new HttpClientContext();
             context.setCookieStore( cookieStore );
             final HttpGet request = new HttpGet( path );
+            InputStream input = null;
             try
             {
                 CloseableHttpResponse response = client.execute( request, context );
@@ -287,7 +295,8 @@ public class ArchiveController {
                 {
                     try ( FileOutputStream out = new FileOutputStream( part ) )
                     {
-                        IOUtils.copy( response.getEntity().getContent(), out );
+                        input = response.getEntity().getContent();
+                        IOUtils.copy( input, out );
                     }
                     part.renameTo( target );
                     return true;
@@ -312,6 +321,7 @@ public class ArchiveController {
             {
                 request.releaseConnection();
                 request.reset();
+                IOUtils.closeQuietly( input, null );
             }
             return false;
         };
