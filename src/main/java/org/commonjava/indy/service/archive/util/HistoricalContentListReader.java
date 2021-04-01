@@ -65,15 +65,14 @@ public class HistoricalContentListReader
         return pathMap;
     }
 
-    private String buildDownloadUrl ( HistoricalEntryDTO download )
+    private void buildDownloadUrl ( HistoricalEntryDTO download )
     {
         String baseUrl = preSeedConfig.indyServer.orElse( null );
         if ( baseUrl == null )
         {
-            return null;
+            return;
         }
         String downloadUrl = String.format( "%s%s%s%s", baseUrl, CONTENT_REST_BASE_PATH, download.getStorePath(), download.getPath() );
         download.setLocalUrl( downloadUrl );
-        return downloadUrl;
     }
 }

@@ -190,7 +190,7 @@ public class ArchiveManageResources
         header.append( "attachment;" )
                 .append( "filename=" )
                 .append( buildConfigId )
-                .append( ".tar.gz" );
+                .append( ".zip" );
         return builder.header( "Content-Disposition", header.toString() ).build();
     }
 }

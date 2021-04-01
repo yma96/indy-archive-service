@@ -65,7 +65,7 @@ public class ArchiveController {
 
     private final String ARCHIVE_DIR = "/archive";
 
-    private final String ARCHIVE_SUFFIX = ".tar.gz";
+    private final String ARCHIVE_SUFFIX = ".zip";
 
     private final String PART_SUFFIX = ".part";
 
@@ -225,17 +225,17 @@ public class ArchiveController {
     public void deleteArchive( final String buildConfigId ) throws IOException
     {
         File targetDir = new File( archiveDir );
-        if ( targetDir.exists() )
+        if ( !targetDir.exists() )
         {
-            List<File> contents = walkedAllFiles( archiveDir );
-            for ( File content : contents )
-            {
-                if ( content.getName().equals( buildConfigId + ARCHIVE_SUFFIX ) )
-                {
-                    content.delete();
-                }
-            }
             return;
+        }
+        List<File> contents = walkedAllFiles( archiveDir );
+        for ( File content : contents )
+        {
+            if ( content.getName().equals( buildConfigId + ARCHIVE_SUFFIX ) )
+            {
+                content.delete();
+            }
         }
     }
 
@@ -252,10 +252,10 @@ public class ArchiveController {
     {
         File tracked = new File( contentBuildDir, content.getBuildConfigId() );
         tracked.getParentFile().mkdirs();
-        try
+
+        try ( FileOutputStream out = new FileOutputStream( tracked ) )
         {
             String json = objectMapper.writeValueAsString( content );
-            FileOutputStream out = new FileOutputStream( tracked );
             IOUtils.copy( new ByteArrayInputStream( json.getBytes() ), out );
         }
         catch ( final IOException e )
