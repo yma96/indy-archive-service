@@ -201,9 +201,4 @@ public class HistoricalEntryDTO
     {
         return String.format( "/%s/%s/%s", storeKey.getPackageType(), storeKey.getType(), storeKey.getName() );
     }
-
-    public String getFileStorePath()
-    {
-        return String.format( "/%s/%s/%s%s", storeKey.getPackageType(), storeKey.getType(), storeKey.getName(), path );
-    }
 }

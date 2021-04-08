@@ -58,7 +58,7 @@ public class HistoricalContentListReader
                 }
                 if ( url != null )
                 {
-                    pathMap.put( url, download.getFileStorePath() );
+                    pathMap.put( url, download.getPath() );
                 }
             }
         }
