@@ -138,7 +138,7 @@ public class ArchiveManageResources
 
     @Operation( description = "Get latest historical build archive by buildConfigId" )
     @APIResponse( responseCode = "200", description = "Get the history archive successfully" )
-    @APIResponse( responseCode = "204", description = "The history archive doesn't exist" )
+    @APIResponse( responseCode = "404", description = "The history archive doesn't exist" )
     @Path( "{buildConfigId}" )
     @Produces ( APPLICATION_OCTET_STREAM )
     @GET
