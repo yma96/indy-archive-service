@@ -26,7 +26,8 @@ public class ResponseHelper
     public Response fromResponse( String message )
     {
         ResponseBuilder builder = Response.status( Response.Status.INTERNAL_SERVER_ERROR )
-                                            .type( MediaType.TEXT_PLAIN ).entity( message );
+                                          .type( MediaType.TEXT_PLAIN )
+                                          .entity( message );
         return builder.build();
     }
 }
