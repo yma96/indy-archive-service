@@ -106,15 +106,19 @@ public class ArchiveManageResources
             Map<String, String> downloadPaths = reader.readPaths( content );
             controller.downloadArtifacts( downloadPaths, content );
             Optional<File> archive = controller.generateArchive( content );
-            if ( archive.isEmpty() )
+            if ( archive.isEmpty() || !archive.get().exists() )
             {
                 final String message = "Failed to get downloaded contents for archive.";
                 logger.error( message );
                 return responseHelper.fromResponse( message );
             }
-            controller.renderArchive( archive.get(), content.getBuildConfigId() );
+            boolean created = controller.renderArchive( archive.get(), content.getBuildConfigId() );
+            if ( !created )
+            {
+                return responseHelper.fromResponse( "Failed to remove the obsolete archive." );
+            }
         }
-        catch ( InterruptedException e )
+        catch ( final InterruptedException e )
         {
             final String message = "Artifacts downloading is interrupted.";
             logger.error( message, e );

@@ -186,22 +186,27 @@ public class ArchiveController {
         //clean obsolete build contents
         for ( File artifact : artifacts )
         {
-            Files.delete( artifact.toPath() );
+            artifact.delete();
         }
         dir.delete();
         return Optional.of( part );
     }
 
-    public void renderArchive( File part, final String buildConfigId )
+    public boolean renderArchive( File part, final String buildConfigId )
     {
-        if ( !part.exists() )
-        {
-            return;
-        }
         final File target = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
-        target.delete();
+        try
+        {
+            Files.delete( target.toPath() );
+        }
+        catch ( final SecurityException | IOException e )
+        {
+            logger.error( "Failed to delete the obsolete archive file %s", target.getPath(), e );
+            return false;
+        }
         target.getParentFile().mkdirs();
         part.renameTo( target );
+        return true;
     }
 
     public Optional<File> getArchiveInputStream( final String buildConfigId ) throws IOException
