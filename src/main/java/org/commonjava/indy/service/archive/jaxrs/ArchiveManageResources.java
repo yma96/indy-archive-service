@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.noContent;
 
 @Path( "/api/archive" )
@@ -138,7 +139,7 @@ public class ArchiveManageResources
 
     @Operation( description = "Get latest historical build archive by buildConfigId" )
     @APIResponse( responseCode = "200", description = "Get the history archive successfully" )
-    @APIResponse( responseCode = "204", description = "The history archive doesn't exist" )
+    @APIResponse( responseCode = "404", description = "The history archive doesn't exist" )
     @Path( "{buildConfigId}" )
     @Produces ( APPLICATION_OCTET_STREAM )
     @GET
@@ -154,6 +155,10 @@ public class ArchiveManageResources
                 final ResponseBuilder builder = Response.ok( new TransferStreamingOutput( inputStream ) );
 
                 response = buildWithHeader( builder, buildConfigId );
+            }
+            else
+            {
+                response = Response.status( NOT_FOUND ).build();
             }
         }
         catch ( final IOException e )
