@@ -15,19 +15,28 @@
  */
 package org.commonjava.indy.service.archive.jaxrs;
 
+import io.smallrye.mutiny.Uni;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import static javax.ws.rs.core.Response.serverError;
+
 @ApplicationScoped
 public class ResponseHelper
 {
-    public Response fromResponse( String message )
+
+    public static Uni<Response> fromResponse( String message )
     {
-        ResponseBuilder builder = Response.status( Response.Status.INTERNAL_SERVER_ERROR )
-                                          .type( MediaType.TEXT_PLAIN )
-                                          .entity( message );
-        return builder.build();
+        return Uni.createFrom().item( serverError().type( MediaType.TEXT_PLAIN ).entity( message ).build() );
+    }
+
+    public static Response buildWithZipHeader( ResponseBuilder builder, final String buildConfigId )
+    {
+        StringBuilder header = new StringBuilder();
+        header.append( "attachment;" ).append( "filename=" ).append( buildConfigId ).append( ".zip" );
+        return builder.header( "Content-Disposition", header.toString() ).build();
     }
 }

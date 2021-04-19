@@ -26,6 +26,6 @@ public class PreSeedConfig
     @ConfigProperty( name = "indy-server" )
     public Optional<String> indyServer;
 
-    @ConfigProperty( name = "storageDir" )
+    @ConfigProperty( name = "storage-dir" )
     public Optional<String> storageDir;
 }
