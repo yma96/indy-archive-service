@@ -62,9 +62,9 @@ import java.util.zip.ZipOutputStream;
 public class ArchiveController
 {
 
-    private final Logger logger = LoggerFactory.getLogger( getClass() );
-
     public final static String EVENT_GENERATE_ARCHIVE = "generate-archive";
+
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final String CONTENT_DIR = "/content";
 
@@ -126,7 +126,7 @@ public class ArchiveController
         logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE,
                      content.getBuildConfigId() );
         Map<String, String> downloadPaths = reader.readPaths( content );
-        Optional<File> archive = Optional.empty();
+        Optional<File> archive;
         try
         {
             downloadArtifacts( downloadPaths, content );
@@ -307,7 +307,7 @@ public class ArchiveController
         tracked.getParentFile().mkdirs();
 
         ByteArrayInputStream input = null;
-        try ( FileOutputStream out = new FileOutputStream( tracked ) )
+        try (FileOutputStream out = new FileOutputStream( tracked ))
         {
             String json = objectMapper.writeValueAsString( content );
             input = new ByteArrayInputStream( json.getBytes() );
@@ -323,8 +323,8 @@ public class ArchiveController
         }
     }
 
-    private Callable<Boolean> download( String contentBuildDir, final String path,
-                                        final String filePath, final CookieStore cookieStore )
+    private Callable<Boolean> download( String contentBuildDir, final String path, final String filePath,
+                                        final CookieStore cookieStore )
     {
         return () -> {
             Thread.currentThread().setName( "download--" + path );
@@ -344,7 +344,7 @@ public class ArchiveController
                 int statusCode = response.getStatusLine().getStatusCode();
                 if ( statusCode == 200 )
                 {
-                    try ( FileOutputStream out = new FileOutputStream( part ) )
+                    try (FileOutputStream out = new FileOutputStream( part ))
                     {
                         input = response.getEntity().getContent();
                         IOUtils.copy( input, out );

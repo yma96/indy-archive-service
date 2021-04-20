@@ -24,7 +24,6 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import static javax.ws.rs.core.Response.serverError;
 
-@ApplicationScoped
 public class ResponseHelper
 {
 
