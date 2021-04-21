@@ -45,4 +45,4 @@ quarkus:
 
 pre-seed:
   indy-server: http://indy-admin.psi.redhat.com
-  storageDir: data
+  storage-dir: data
