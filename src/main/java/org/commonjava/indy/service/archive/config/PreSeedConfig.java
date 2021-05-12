@@ -23,9 +23,29 @@ import java.util.Optional;
 @ConfigProperties( prefix = "pre-seed" )
 public class PreSeedConfig
 {
-    @ConfigProperty( name = "indy-server" )
-    public Optional<String> indyServer;
+    @ConfigProperty( name = "main-indy" )
+    public Optional<String> mainIndy;
 
     @ConfigProperty( name = "storage-dir" )
     public Optional<String> storageDir;
+
+    public Optional<String> getMainIndy()
+    {
+        return mainIndy;
+    }
+
+    public void setMainIndy( Optional<String> mainIndy )
+    {
+        this.mainIndy = mainIndy;
+    }
+
+    public Optional<String> getStorageDir()
+    {
+        return storageDir;
+    }
+
+    public void setStorageDir( Optional<String> storageDir )
+    {
+        this.storageDir = storageDir;
+    }
 }

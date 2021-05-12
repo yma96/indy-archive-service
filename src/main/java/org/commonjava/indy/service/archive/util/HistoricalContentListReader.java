@@ -32,6 +32,15 @@ public class HistoricalContentListReader
     @Inject
     PreSeedConfig preSeedConfig;
 
+    public HistoricalContentListReader()
+    {
+    }
+
+    public HistoricalContentListReader( PreSeedConfig preSeedConfig )
+    {
+        this.preSeedConfig = preSeedConfig;
+    }
+
     public Map<String, String> readPaths( HistoricalContentDTO content  )
     {
         Map<String, String> pathMap = new HashMap<>();
@@ -67,7 +76,7 @@ public class HistoricalContentListReader
 
     private void buildDownloadUrl ( HistoricalEntryDTO download )
     {
-        String baseUrl = preSeedConfig.indyServer.orElse( null );
+        String baseUrl = preSeedConfig.mainIndy.orElse( null );
         if ( baseUrl == null )
         {
             return;

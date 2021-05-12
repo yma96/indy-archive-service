@@ -44,5 +44,5 @@ quarkus:
     always-include: true
 
 pre-seed:
-  indy-server: http://indy-admin.psi.redhat.com
+  main-indy: indy-admin.psi.redhat.com
   storage-dir: data

@@ -1,0 +1,74 @@
+/**
+ * Copyright (C) 2011-2021 Red Hat, Inc. (https://github.com/Commonjava/service-parent)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.commonjava.indy.service.archive.util;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.commonjava.indy.service.archive.config.PreSeedConfig;
+import org.commonjava.indy.service.archive.model.StoreKey;
+import org.commonjava.indy.service.archive.model.StoreType;
+import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
+import org.commonjava.indy.service.archive.model.dto.HistoricalEntryDTO;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+@QuarkusTest
+public class HistoricalContentListReaderTest
+{
+
+    private final String MAIN_INDY = "indy.main.server";
+
+    private final String PATH = "/org/apache/maven/maven-core/3.0/maven-core-3.0.jar";
+
+    private final String METADATA_PATH = "/org/apache/maven/maven-core/3.0/maven-metadata.xml";
+
+    @Test
+    public void testReadPaths()
+    {
+        StoreKey store = new StoreKey( "maven", StoreType.hosted, "test" );
+        List<HistoricalEntryDTO> entryDTOs = new ArrayList<>();
+        HistoricalEntryDTO entry = new HistoricalEntryDTO( store, PATH );
+        HistoricalEntryDTO metaEntry = new HistoricalEntryDTO( store, METADATA_PATH );
+
+        entryDTOs.add( entry );
+        entryDTOs.add( metaEntry );
+
+        HistoricalContentDTO contentDTO = new HistoricalContentDTO( "8888", entryDTOs.toArray(
+                        new HistoricalEntryDTO[entryDTOs.size()] ) );
+
+        PreSeedConfig preSeedConfig = new PreSeedConfig();
+        preSeedConfig.setMainIndy( Optional.of( MAIN_INDY ) );
+        HistoricalContentListReader reader = new HistoricalContentListReader( preSeedConfig );
+
+        Map<String, String> paths = reader.readPaths( contentDTO );
+
+        assertThat( paths.size(), equalTo( 1 ) );
+        String storePath = MAIN_INDY + "/api/content" + entry.getStorePath();
+        assertNotNull( paths.get( storePath + PATH ) );
+        assertThat( paths.get( storePath + PATH ), equalTo( PATH ) );
+
+        //maven-metadata.xml will be ignored
+        assertNull( paths.get( storePath + METADATA_PATH ) );
+    }
+}
