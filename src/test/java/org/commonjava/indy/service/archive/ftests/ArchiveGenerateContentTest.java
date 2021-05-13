@@ -38,6 +38,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ArchiveGenerateContentTest
                 extends AbstractArchiveFuncTest
 {
+    /**
+     * <b>GIVEN:</b>
+     * <ul>
+     *     <li>Input a json file with correct artifact content</li>
+     * </ul>
+     *
+     * <br/>
+     * <b>WHEN:</b>
+     * <ul>
+     *     <li>Request generating api of archive</li>
+     * </ul>
+     *
+     * <br/>
+     * <b>THEN:</b>
+     * <ul>
+     *     <li>The archive can be generated correctly</li>
+     * </ul>
+     */
     @Test
     public void testSuccessGenerateContent()
     {
@@ -56,15 +74,33 @@ public class ArchiveGenerateContentTest
         assertTrue( file.length() > 0L );
     }
 
+    /**
+     * <b>GIVEN:</b>
+     * <ul>
+     *     <li>Input a json file with missing artifact content</li>
+     * </ul>
+     *
+     * <br/>
+     * <b>WHEN:</b>
+     * <ul>
+     *     <li>Request generating api of archive</li>
+     * </ul>
+     *
+     * <br/>
+     * <b>THEN:</b>
+     * <ul>
+     *     <li>The archive can not be generated</li>
+     * </ul>
+     */
     @Test
-    public void testMissedGenerateContent()
+    public void testMissingGenerateContent()
     {
-        File file = new File( "data/archive", MISS_BUILD_ARCHIVE );
+        File file = new File( "data/archive", MISSING_BUILD_ARCHIVE );
         assertFalse( file.exists() );
         assertThat( file.length(), equalTo( 0L ) );
 
         given().when()
-               .body( MISS_TRACKED.getBytes() )
+               .body( MISSING_TRACKED.getBytes() )
                .contentType( MediaType.APPLICATION_JSON )
                .post( "/api/archive/generate" )
                .then()

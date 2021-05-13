@@ -32,7 +32,7 @@ public class AbstractArchiveFuncTest
                     + "    \"sha1\" : \"73728ce32c9016c8bd05584301fa3ba3a6f5d20a\",\n" + "    \"size\" : 527040\n"
                     + "  }\n" + "]}";
 
-    protected final String MISS_TRACKED = "{\n" + "\"buildConfigId\":\"9001\",\n" + "\"downloads\":\n" + "[{\n"
+    protected final String MISSING_TRACKED = "{\n" + "\"buildConfigId\":\"9001\",\n" + "\"downloads\":\n" + "[{\n"
                     + "    \"storeKey\" : \"maven:hosted:shared-imports\",\n"
                     + "    \"path\" : \"/org/apache/maven/maven-core/3.0/miss-core-3.0.jar\",\n"
                     + "    \"md5\" : \"9bd377874764a4fad7209021abfe7cf7\",\n"
@@ -44,7 +44,7 @@ public class AbstractArchiveFuncTest
 
     protected final String SUCCESS_BUILD_ARCHIVE = "9000.zip";
 
-    protected final String MISS_BUILD_ARCHIVE = "9001.zip";
+    protected final String MISSING_BUILD_ARCHIVE = "9001.zip";
 
     @BeforeEach
     public void prepare()
@@ -62,7 +62,7 @@ public class AbstractArchiveFuncTest
     {
         List<File> files = new ArrayList<>();
         files.add( new File( "data/archive", SUCCESS_BUILD_ARCHIVE ) );
-        files.add( new File( "data/archive", MISS_BUILD_ARCHIVE ) );
+        files.add( new File( "data/archive", MISSING_BUILD_ARCHIVE ) );
         for ( File target : files )
         {
             if ( target.exists() )

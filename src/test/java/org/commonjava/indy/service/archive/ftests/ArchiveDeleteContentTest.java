@@ -31,7 +31,24 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-
+/**
+ * <b>GIVEN:</b>
+ * <ul>
+ *     <li>An archive generated successfully</li>
+ * </ul>
+ *
+ * <br/>
+ * <b>WHEN:</b>
+ * <ul>
+ *     <li>Request deleting api for this archive</li>
+ * </ul>
+ *
+ * <br/>
+ * <b>THEN:</b>
+ * <ul>
+ *     <li>The archive can be deleted correctly</li>
+ * </ul>
+ */
 @QuarkusTest
 @TestProfile( ArchiveFunctionProfile.class )
 @Tag( "function" )
