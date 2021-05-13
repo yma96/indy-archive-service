@@ -120,7 +120,7 @@ public class ArchiveController
         IOUtils.closeQuietly( client, null );
     }
 
-    @ConsumeEvent( value = "generate-archive" )
+    @ConsumeEvent( value = EVENT_GENERATE_ARCHIVE )
     public Boolean generate( HistoricalContentDTO content )
     {
         logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE,
