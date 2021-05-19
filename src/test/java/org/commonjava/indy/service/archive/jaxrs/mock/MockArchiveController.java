@@ -17,6 +17,7 @@ package org.commonjava.indy.service.archive.jaxrs.mock;
 
 import org.apache.commons.io.FileUtils;
 import org.commonjava.indy.service.archive.controller.ArchiveController;
+import org.commonjava.indy.service.archive.model.ArchiveStatus;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -33,8 +34,6 @@ public class MockArchiveController
                 extends ArchiveController
 {
     public static final String NOT_FOUND_BUILD = "0000";
-
-    public static final String NOT_EXISTED_BUILD_ARCHIVE = "0000.zip";
 
     public static final String EXIST_BUILD = "1111";
 
@@ -88,5 +87,17 @@ public class MockArchiveController
             return;
         }
         throw new IOException();
+    }
+
+    @Override
+    public boolean statusExists( final String buildConfigId )
+    {
+        return buildConfigId.equals( EXIST_BUILD );
+    }
+
+    @Override
+    public String getStatus( String buildConfigId )
+    {
+        return buildConfigId.equals( EXIST_BUILD ) ? ArchiveStatus.completed.getArchiveStatus() : null;
     }
 }
