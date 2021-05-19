@@ -123,6 +123,31 @@ public class ArchiveManageResources
                                    .build() );
     }
 
+    @Operation( description = "Get the status of generating archive based on build config Id" )
+    @APIResponse( responseCode = "200", description = "Get the status of generating history archive" )
+    @APIResponse( responseCode = "404", description = "The status of generating history archive doesn't exist" )
+    @GET
+    @Path( "status/{buildConfigId}" )
+    public Uni<Response> getGenerateStatus( final @PathParam( "buildConfigId" ) String buildConfigId,
+                                            final @Context UriInfo uriInfo )
+    {
+        Response response;
+        if ( controller.statusExists( buildConfigId ) )
+        {
+            String msg = String.format( "Archive generating on build config Id: %s is %s.", buildConfigId,
+                                        controller.getStatus( buildConfigId ) );
+            response = Response.ok().type( MediaType.TEXT_PLAIN ).entity( msg ).build();
+        }
+        else
+        {
+            response = Response.status( NOT_FOUND )
+                               .type( MediaType.TEXT_PLAIN )
+                               .entity( "Not found process of generating." )
+                               .build();
+        }
+        return Uni.createFrom().item( response );
+    }
+
     @Operation( description = "Get latest historical build archive by buildConfigId" )
     @APIResponse( responseCode = "200", description = "Get the history archive successfully" )
     @APIResponse( responseCode = "404", description = "The history archive doesn't exist" )
@@ -131,7 +156,7 @@ public class ArchiveManageResources
     @GET
     public Uni<Response> get( final @PathParam( "buildConfigId" ) String buildConfigId, final @Context UriInfo uriInfo )
     {
-        Response response = null;
+        Response response;
         try
         {
             Optional<File> target = controller.getArchiveInputStream( buildConfigId );

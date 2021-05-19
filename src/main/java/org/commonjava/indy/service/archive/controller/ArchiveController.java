@@ -28,6 +28,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.commonjava.indy.service.archive.config.PreSeedConfig;
+import org.commonjava.indy.service.archive.model.ArchiveStatus;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
 import org.commonjava.indy.service.archive.util.HistoricalContentListReader;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,8 +95,10 @@ public class ArchiveController
 
     private String archiveDir;
 
+    private final Map<String, String> treated = new HashMap<>();
+
     @PostConstruct
-    public void init()
+    public void init() throws IOException
     {
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
@@ -112,6 +116,7 @@ public class ArchiveController
         String storeDir = preSeedConfig.storageDir.orElse( "data" );
         contentDir = String.format( "%s%s", storeDir, CONTENT_DIR );
         archiveDir = String.format( "%s%s", storeDir, ARCHIVE_DIR );
+        restoreGenerateStatusFromDisk();
     }
 
     @PreDestroy
@@ -125,6 +130,8 @@ public class ArchiveController
     {
         logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE,
                      content.getBuildConfigId() );
+        recordInProgress( content.getBuildConfigId() );
+
         Map<String, String> downloadPaths = reader.readPaths( content );
         Optional<File> archive;
         try
@@ -155,6 +162,8 @@ public class ArchiveController
         {
             created = renderArchive( archive.get(), content.getBuildConfigId() );
         }
+
+        recordCompleted( content.getBuildConfigId() );
         return created;
     }
 
@@ -166,7 +175,7 @@ public class ArchiveController
             return Optional.empty();
         }
 
-        List<File> contents = walkedAllFiles( archiveDir );
+        List<File> contents = walkAllFiles( archiveDir );
         for ( File content : contents )
         {
             if ( content.getName().equals( buildConfigId + ARCHIVE_SUFFIX ) )
@@ -184,7 +193,7 @@ public class ArchiveController
         {
             return;
         }
-        List<File> contents = walkedAllFiles( archiveDir );
+        List<File> contents = walkAllFiles( archiveDir );
         for ( File content : contents )
         {
             if ( content.getName().equals( buildConfigId + ARCHIVE_SUFFIX ) )
@@ -192,6 +201,16 @@ public class ArchiveController
                 content.delete();
             }
         }
+    }
+
+    public boolean statusExists( final String buildConfigId )
+    {
+        return treated.containsKey( buildConfigId );
+    }
+
+    public String getStatus( String buildConfigId )
+    {
+        return treated.get( buildConfigId );
     }
 
     private void downloadArtifacts( final Map<String, String> downloadPaths, final HistoricalContentDTO content )
@@ -241,7 +260,7 @@ public class ArchiveController
 
         logger.info( "Writing archive to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
-        List<File> artifacts = walkedAllFiles( contentBuildDir );
+        List<File> artifacts = walkAllFiles( contentBuildDir );
 
         byte[] buffer = new byte[1024];
         for ( File artifact : artifacts )
@@ -292,7 +311,7 @@ public class ArchiveController
         return true;
     }
 
-    private List<File> walkedAllFiles( String path ) throws IOException
+    private List<File> walkAllFiles( String path ) throws IOException
     {
         List<File> contents = Files.walk( Paths.get( path ) )
                                    .filter( Files::isRegularFile )
@@ -376,5 +395,41 @@ public class ArchiveController
             }
             return false;
         };
+    }
+
+    private void restoreGenerateStatusFromDisk() throws IOException
+    {
+        File targetDir = new File( archiveDir );
+        if ( !targetDir.exists() )
+        {
+            return;
+        }
+        List<File> contents = walkAllFiles( archiveDir );
+        for ( File content : contents )
+        {
+            if ( content.getName().endsWith( PART_ARCHIVE_SUFFIX ) )
+            {
+                treated.put( content.getName().split( PART_ARCHIVE_SUFFIX )[0],
+                             ArchiveStatus.inProgress.getArchiveStatus() );
+                continue;
+            }
+            else if ( content.getName().endsWith( ARCHIVE_SUFFIX ) )
+            {
+                treated.put( content.getName().split( ARCHIVE_SUFFIX )[0], ArchiveStatus.completed.getArchiveStatus() );
+                continue;
+            }
+        }
+    }
+
+    private void recordInProgress( String buildConfigId )
+    {
+        treated.remove( buildConfigId );
+        treated.put( buildConfigId, ArchiveStatus.inProgress.getArchiveStatus() );
+    }
+
+    private void recordCompleted( String buildConfigId )
+    {
+        treated.remove( buildConfigId );
+        treated.put( buildConfigId, ArchiveStatus.completed.getArchiveStatus() );
     }
 }
