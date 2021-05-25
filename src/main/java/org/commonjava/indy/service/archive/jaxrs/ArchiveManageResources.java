@@ -31,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.slf4j.Logger;
@@ -63,6 +64,7 @@ import static org.commonjava.indy.service.archive.controller.ArchiveController.E
 import static org.commonjava.indy.service.archive.jaxrs.ResponseHelper.buildWithZipHeader;
 import static org.commonjava.indy.service.archive.jaxrs.ResponseHelper.fromResponse;
 
+@Tag( name = "Archive Management", description = "Resource for managing the historical archive" )
 @Path( "/api/archive" )
 public class ArchiveManageResources
 {

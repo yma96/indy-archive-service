@@ -18,6 +18,7 @@ package org.commonjava.indy.service.archive.jaxrs;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import org.commonjava.indy.service.archive.controller.StatsController;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -26,6 +27,8 @@ import javax.ws.rs.Produces;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Tag( name = "Generic Infrastructure Queries (UI Support)",
+                description = "Read-only operations for retrieving information about this system" )
 @Path( "/api/stats" )
 public class StatsResources
 {
