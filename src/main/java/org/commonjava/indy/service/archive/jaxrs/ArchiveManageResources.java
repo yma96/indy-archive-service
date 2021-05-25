@@ -105,7 +105,7 @@ public class ArchiveManageResources
         }
 
         Handler<AsyncResult<Message<Boolean>>> resultHandler = messageAsyncResult -> {
-            if ( messageAsyncResult.result().body() )
+            if ( messageAsyncResult.result() != null && messageAsyncResult.result().body() )
             {
                 logger.info( "Archive generate event: {} is completed, build config id: {}", EVENT_GENERATE_ARCHIVE,
                              content.getBuildConfigId() );
