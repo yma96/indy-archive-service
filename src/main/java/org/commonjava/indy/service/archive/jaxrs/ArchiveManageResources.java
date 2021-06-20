@@ -81,7 +81,11 @@ public class ArchiveManageResources
 
     @Operation( description = "Generate archive based on tracked content" )
     @APIResponse( responseCode = "202", description = "The archive created request is accepted" )
-    @RequestBody( description = "The tracked content definition JSON", name = "body", required = true, content = @Content( schema = @Schema( implementation = HistoricalContentDTO.class ) ) )
+    @RequestBody( description = "The tracked content definition JSON", name = "body", required = true, content = @Content( mediaType = APPLICATION_JSON, example =
+                    "{" + "\"buildConfigId\": \"XXX\"," + "\"downloads\":" + "[{" + "    \"storeKey\": \"\","
+                                    + "    \"path\": \"\"," + "    \"md5\": \"\"," + "    \"sha256\": \"\","
+                                    + "    \"sha1\": \"\"," + "    \"size\": 001" + "  }," + "..."
+                                    + "]}", schema = @Schema( implementation = HistoricalContentDTO.class ) ) )
     @POST
     @Path( "generate" )
     @Consumes( APPLICATION_JSON )
