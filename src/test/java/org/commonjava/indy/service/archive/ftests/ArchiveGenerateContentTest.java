@@ -106,7 +106,6 @@ public class ArchiveGenerateContentTest
                .then()
                .statusCode( anyOf( is( 202 ), is( 200 ) ) );
 
-        assertFalse( file.exists() );
         assertThat( file.length(), equalTo( 0L ) );
     }
 }
