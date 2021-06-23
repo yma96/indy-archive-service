@@ -52,7 +52,7 @@ public class MockArchiveController
     public static final int SIZE_200M = 1024 * 1024 * 200; // 200M
 
     @Override
-    public Boolean generate( HistoricalContentDTO content )
+    protected Boolean doGenerate( HistoricalContentDTO content )
     {
         String buildConfigId = content.getBuildConfigId();
         return buildConfigId.equals( SUCCESS_BUILD );
