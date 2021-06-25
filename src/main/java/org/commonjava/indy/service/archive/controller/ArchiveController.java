@@ -16,7 +16,6 @@
 package org.commonjava.indy.service.archive.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.vertx.ConsumeEvent;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
@@ -103,6 +102,7 @@ public class ArchiveController
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
+            t.setName( "Content-Download" );
             t.setDaemon( true );
             return t;
         } );
@@ -125,8 +125,18 @@ public class ArchiveController
         IOUtils.closeQuietly( client, null );
     }
 
-    @ConsumeEvent( value = EVENT_GENERATE_ARCHIVE )
-    public Boolean generate( HistoricalContentDTO content )
+    public void generate( HistoricalContentDTO content )
+    {
+        ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
+            final Thread t = new Thread( r );
+            t.setName( "Archive-Generate" );
+            t.setDaemon( true );
+            return t;
+        } );
+        generateExecutor.execute( () -> doGenerate( content ) );
+    }
+
+    protected Boolean doGenerate( HistoricalContentDTO content )
     {
         logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE,
                      content.getBuildConfigId() );

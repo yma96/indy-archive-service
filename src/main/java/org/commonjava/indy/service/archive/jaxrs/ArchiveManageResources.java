@@ -17,10 +17,7 @@ package org.commonjava.indy.service.archive.jaxrs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.commonjava.indy.service.archive.controller.ArchiveController;
@@ -60,7 +57,6 @@ import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.accepted;
 import static javax.ws.rs.core.Response.noContent;
-import static org.commonjava.indy.service.archive.controller.ArchiveController.EVENT_GENERATE_ARCHIVE;
 import static org.commonjava.indy.service.archive.jaxrs.ResponseHelper.buildWithZipHeader;
 import static org.commonjava.indy.service.archive.jaxrs.ResponseHelper.fromResponse;
 
@@ -81,7 +77,11 @@ public class ArchiveManageResources
 
     @Operation( description = "Generate archive based on tracked content" )
     @APIResponse( responseCode = "202", description = "The archive created request is accepted" )
-    @RequestBody( description = "The tracked content definition JSON", name = "body", required = true, content = @Content( schema = @Schema( implementation = HistoricalContentDTO.class ) ) )
+    @RequestBody( description = "The tracked content definition JSON", name = "body", required = true, content = @Content( mediaType = APPLICATION_JSON, example =
+                    "{" + "\"buildConfigId\": \"XXX\"," + "\"downloads\":" + "[{" + "    \"storeKey\": \"\","
+                                    + "    \"path\": \"\"," + "    \"md5\": \"\"," + "    \"sha256\": \"\","
+                                    + "    \"sha1\": \"\"," + "    \"size\": 001" + "  }," + "..."
+                                    + "]}", schema = @Schema( implementation = HistoricalContentDTO.class ) ) )
     @POST
     @Path( "generate" )
     @Consumes( APPLICATION_JSON )
@@ -106,19 +106,7 @@ public class ArchiveManageResources
             return fromResponse( message );
         }
 
-        Handler<AsyncResult<Message<Boolean>>> resultHandler = messageAsyncResult -> {
-            if ( messageAsyncResult.result() != null && messageAsyncResult.result().body() )
-            {
-                logger.info( "Archive generate event: {} is completed, build config id: {}", EVENT_GENERATE_ARCHIVE,
-                             content.getBuildConfigId() );
-            }
-            else
-            {
-                logger.error( "Archive generate event: {} is failed, build config id: {}", EVENT_GENERATE_ARCHIVE,
-                              content.getBuildConfigId() );
-            }
-        };
-        bus.request( EVENT_GENERATE_ARCHIVE, content, resultHandler );
+        controller.generate( content );
         return Uni.createFrom()
                   .item( accepted().type( MediaType.TEXT_PLAIN )
                                    .entity( "Archive created request is accepted." )
