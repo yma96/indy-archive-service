@@ -102,6 +102,7 @@ public class ArchiveController
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
+            t.setName( "Content-Download" );
             t.setDaemon( true );
             return t;
         } );
@@ -126,7 +127,13 @@ public class ArchiveController
 
     public void generate( HistoricalContentDTO content )
     {
-        executorService.execute( () -> doGenerate( content ) );
+        ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
+            final Thread t = new Thread( r );
+            t.setName( "Archive-Generate" );
+            t.setDaemon( true );
+            return t;
+        } );
+        generateExecutor.execute( () -> doGenerate( content ) );
     }
 
     protected Boolean doGenerate( HistoricalContentDTO content )
