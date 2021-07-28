@@ -24,6 +24,8 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.commonjava.indy.service.archive.model.StoreKey.NPM_PKG_KEY;
+
 @ApplicationScoped
 public class HistoricalContentListReader
 {
@@ -51,9 +53,16 @@ public class HistoricalContentListReader
             for ( HistoricalEntryDTO download : downloads )
             {
                 String path = download.getPath();
+                String packageType = download.getStoreKey().getPackageType();
+
+                if ( packageType.equals( NPM_PKG_KEY ) && !path.endsWith( ".tgz" ) )
+                {
+                    // Ignore the npm package metadata in archive
+                    continue;
+                }
                 if ( path.contains( "maven-metadata.xml" ) )
                 {
-                    // sidecar will get the maven-metadata.xml from main indy server
+                    // Ignore maven-metadata.xml in archive
                     continue;
                 }
                 // ensure every entry has an available localUrl
