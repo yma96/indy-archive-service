@@ -30,6 +30,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public final class StoreKey
         implements Comparable<StoreKey>, Externalizable
 {
+    public static String MAVEN_PKG_KEY = "maven";
+
+    public static String NPM_PKG_KEY = "npm";
+
     private static final int VERSION = 1;
 
     private String packageType;
@@ -37,8 +41,6 @@ public final class StoreKey
     private StoreType type;
 
     private String name;
-
-    private static String MAVEN_PKG_KEY = "maven";
 
     public StoreKey(){}
 

@@ -39,17 +39,21 @@ public class HistoricalContentListReaderTest
 
     private final String MAIN_INDY = "indy.main.server";
 
-    private final String PATH = "/org/apache/maven/maven-core/3.0/maven-core-3.0.jar";
+    private final String MAVEN_PATH = "/org/apache/maven/maven-core/3.0/maven-core-3.0.jar";
 
-    private final String METADATA_PATH = "/org/apache/maven/maven-core/3.0/maven-metadata.xml";
+    private final String MAVEN_METADATA_PATH = "/org/apache/maven/maven-core/3.0/maven-metadata.xml";
+
+    private final String NPM_TARBALL_PATH = "/@babel/helper-validator-identifier/-/helper-validator-identifier-7.10.4.tgz";
+
+    private final String NPM_METADATA_PATH = "/@babel%2fhelper-validator-identifier";
 
     @Test
-    public void testReadPaths()
+    public void testMavenReadPaths()
     {
         StoreKey store = new StoreKey( "maven", StoreType.hosted, "test" );
         List<HistoricalEntryDTO> entryDTOs = new ArrayList<>();
-        HistoricalEntryDTO entry = new HistoricalEntryDTO( store, PATH );
-        HistoricalEntryDTO metaEntry = new HistoricalEntryDTO( store, METADATA_PATH );
+        HistoricalEntryDTO entry = new HistoricalEntryDTO( store, MAVEN_PATH );
+        HistoricalEntryDTO metaEntry = new HistoricalEntryDTO( store, MAVEN_METADATA_PATH );
 
         entryDTOs.add( entry );
         entryDTOs.add( metaEntry );
@@ -65,10 +69,39 @@ public class HistoricalContentListReaderTest
 
         assertThat( paths.size(), equalTo( 1 ) );
         String storePath = MAIN_INDY + "/api/content" + entry.getStorePath();
-        assertNotNull( paths.get( storePath + PATH ) );
-        assertThat( paths.get( storePath + PATH ), equalTo( PATH ) );
+        assertNotNull( paths.get( storePath + MAVEN_PATH ) );
+        assertThat( paths.get( storePath + MAVEN_PATH ), equalTo( MAVEN_PATH ) );
 
         //maven-metadata.xml will be ignored
-        assertNull( paths.get( storePath + METADATA_PATH ) );
+        assertNull( paths.get( storePath + MAVEN_METADATA_PATH ) );
+    }
+
+    @Test
+    public void testNPMReadPaths()
+    {
+        List<HistoricalEntryDTO> entryDTOs = new ArrayList<>();
+        StoreKey npmStore = new StoreKey( "npm", StoreType.hosted, "test" );
+        HistoricalEntryDTO npmEntry = new HistoricalEntryDTO( npmStore, NPM_TARBALL_PATH );
+        HistoricalEntryDTO npmMetaEntry = new HistoricalEntryDTO( npmStore, NPM_METADATA_PATH );
+
+        entryDTOs.add( npmEntry );
+        entryDTOs.add( npmMetaEntry );
+
+        HistoricalContentDTO contentDTO = new HistoricalContentDTO( "8888", entryDTOs.toArray(
+                        new HistoricalEntryDTO[entryDTOs.size()] ) );
+
+        PreSeedConfig preSeedConfig = new PreSeedConfig();
+        preSeedConfig.setMainIndy( Optional.of( MAIN_INDY ) );
+        HistoricalContentListReader reader = new HistoricalContentListReader( preSeedConfig );
+
+        Map<String, String> paths = reader.readPaths( contentDTO );
+
+        assertThat( paths.size(), equalTo( 1 ) );
+        String storePath = MAIN_INDY + "/api/content" + npmEntry.getStorePath();
+        assertNotNull( paths.get( storePath + NPM_TARBALL_PATH ) );
+        assertThat( paths.get( storePath + NPM_TARBALL_PATH ), equalTo( NPM_TARBALL_PATH ) );
+
+        //npm package metadata will be ignored
+        assertNull( paths.get( storePath + NPM_METADATA_PATH ) );
     }
 }
