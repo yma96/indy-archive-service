@@ -57,6 +57,7 @@ public class ArchiveRetrieveContentTest
 {
     @Test
     public void testRetrieveContent()
+            throws InterruptedException
     {
         File file = new File( "data/archive", SUCCESS_BUILD_ARCHIVE );
         assertFalse( file.exists() );
@@ -68,6 +69,9 @@ public class ArchiveRetrieveContentTest
                .post( "/api/archive/generate" )
                .then()
                .statusCode( anyOf( is( 202 ), is( 200 ) ) );
+
+        // Wait for the completion of generating process
+        Thread.sleep( 6000 );
 
         given().when()
                .get( "/api/archive/" + SUCCESS_BUILD )

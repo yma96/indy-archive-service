@@ -58,6 +58,7 @@ public class ArchiveGenerateContentTest
      */
     @Test
     public void testSuccessGenerateContent()
+            throws InterruptedException
     {
         File file = new File( "data/archive", SUCCESS_BUILD_ARCHIVE );
         assertFalse( file.exists() );
@@ -69,6 +70,9 @@ public class ArchiveGenerateContentTest
                .post( "/api/archive/generate" )
                .then()
                .statusCode( anyOf( is( 202 ), is( 200 ) ) );
+
+        // Wait for the completion of generating process
+        Thread.sleep( 6000 );
 
         assertTrue( file.exists() );
         assertTrue( file.length() > 0L );

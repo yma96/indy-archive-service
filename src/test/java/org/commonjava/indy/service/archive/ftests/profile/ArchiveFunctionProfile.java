@@ -23,7 +23,7 @@ import java.util.Map;
 public class ArchiveFunctionProfile
                 implements QuarkusTestProfile
 {
-    public static final String MAIN_INDY = "indy-admin.psi.redhat.com";
+    public static final String MAIN_INDY = "http://indy-admin.psi.redhat.com";
 
     public static final String STORAGE_DIR = "data";
 
