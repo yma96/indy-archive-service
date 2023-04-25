@@ -49,7 +49,7 @@ public class MockArchiveController
 
     public static final int SIZE_50K = 1024 * 50; // 50K
 
-    public static final int SIZE_200M = 1024 * 1024 * 200; // 200M
+    public static final int SIZE_20M = 1024 * 1024 * 20; // 20M
 
     @Override
     protected Boolean doGenerate( HistoricalContentDTO content )
@@ -69,7 +69,7 @@ public class MockArchiveController
                 return Optional.of( file );
             case EXIST_LARGE_BUILD:
                 File large = new File( "data/archive", EXIST_LARGE_BUILD_ARCHIVE );
-                FileUtils.write( large, new String( getBytes( SIZE_200M ) ), "UTF-8" );
+                FileUtils.write( large, new String( getBytes( SIZE_20M ) ), "UTF-8" );
                 return Optional.of( large );
             case ERR_BUILD:
                 throw new IOException();
