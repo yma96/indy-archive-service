@@ -25,13 +25,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.commonjava.indy.service</groupId>
   <artifactId>indy-archive-service</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
 
   <scm>
     <connection>scm:git:https://github.com/commonjava/indy-archive-service</connection>
     <developerConnection>scm:git:https://github.com/commonjava/indy-archive-service</developerConnection>
     <url>http://github.com/Commonjava/indy-archive-service</url>
-    <tag>indy-archive-service-1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
