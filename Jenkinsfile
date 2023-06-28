@@ -59,10 +59,15 @@ pipeline {
             }
         }
         stage('Deploy') {
-            when { branch 'master' }
+            when {
+                allOf {
+                    expression { my_bc != null }
+                    expression { env.CHANGE_ID == null } // Not Pull request
+                }
+            }
             steps {
                 echo "Deploy"
-                sh '${M2_HOME}/bin/mvn help:effective-settings -B -V clean deploy -e'
+                sh '${M2_HOME}/bin/mvn help:effective-settings -B -V clean deploy -e -DskipTests'
             }
         }
         stage('Archive') {
