@@ -211,6 +211,7 @@ public class ArchiveController
                 content.delete();
             }
         }
+        logger.info( "Deleting historical archive finished for build config id: '{}'", buildConfigId );
     }
 
     public boolean statusExists( final String buildConfigId )
@@ -318,6 +319,7 @@ public class ArchiveController
         }
         target.getParentFile().mkdirs();
         part.renameTo( target );
+        logger.info( "Writing archive finished: '{}'", target.getAbsolutePath() );
         return true;
     }
 
