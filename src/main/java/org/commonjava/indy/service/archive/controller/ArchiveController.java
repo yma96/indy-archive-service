@@ -129,7 +129,6 @@ public class ArchiveController
     {
         ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
-            t.setName( "Archive-Generate" );
             t.setDaemon( true );
             return t;
         } );
@@ -385,19 +384,19 @@ public class ArchiveController
                 }
                 else if ( statusCode == 404 )
                 {
-                    logger.trace( "<<<Not Found path: {}", path );
+                    logger.warn( "<<<Not Found path: {}", path );
                     return false;
                 }
                 else
                 {
-                    logger.trace( "<<<Error path: {}", path );
+                    logger.warn( "<<<Error path: {}", path );
                     return false;
                 }
             }
             catch ( final Exception e )
             {
                 e.printStackTrace();
-                logger.trace( "Download failed for path: {}", path );
+                logger.error( "Download failed for path: {}", path );
             }
             finally
             {
