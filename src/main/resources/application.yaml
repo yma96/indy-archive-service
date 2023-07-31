@@ -30,7 +30,7 @@ quarkus:
       "org.commonjava.indy.service":
         level: INFO
     console:
-      enable: false
+      enable: true
     file:
       level: INFO
       enable: true
