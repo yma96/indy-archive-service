@@ -189,4 +189,23 @@ public class ArchiveManageResources
         }
         return Uni.createFrom().item( noContent().build() );
     }
+
+    @Operation( description = "Clean up all the temp workplace" )
+    @APIResponse( responseCode = "204", description = "The workplace cleanup is finished" )
+    @Path( "cleanup" )
+    @DELETE
+    public Uni<Response> delete( final @Context UriInfo uriInfo )
+    {
+        try
+        {
+            controller.cleanup();
+        }
+        catch ( final IOException e )
+        {
+            final String message = "Failed to clean up all the temp workplace";
+            logger.error( message, e );
+            return fromResponse( message );
+        }
+        return Uni.createFrom().item( noContent().build() );
+    }
 }
