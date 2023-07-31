@@ -90,8 +90,7 @@ public class ArchiveManageResources
         HistoricalContentDTO content;
         try
         {
-            String json = IOUtils.toString( request.getInputStream(), Charset.defaultCharset() );
-            content = objectMapper.readValue( json, HistoricalContentDTO.class );
+            content = objectMapper.readValue( request.getInputStream(), HistoricalContentDTO.class );
             if ( content == null )
             {
                 final String message = "Failed to read historical content which is empty.";

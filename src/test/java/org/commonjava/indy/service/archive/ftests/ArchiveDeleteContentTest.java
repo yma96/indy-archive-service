@@ -57,6 +57,7 @@ public class ArchiveDeleteContentTest
 {
     @Test
     public void testDelete()
+            throws InterruptedException
     {
         File file = new File( "data/archive", SUCCESS_BUILD_ARCHIVE );
         assertFalse( file.exists() );
@@ -69,7 +70,10 @@ public class ArchiveDeleteContentTest
                .then()
                .statusCode( anyOf( is( 202 ), is( 200 ) ) );
 
+        // Wait for the completion of generating process
+        Thread.sleep( 15000 );
         given().when().delete( "/api/archive/" + SUCCESS_BUILD ).then().statusCode( NO_CONTENT.getStatusCode() );
+
         assertFalse( file.exists() );
     }
 }
