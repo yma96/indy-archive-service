@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +103,7 @@ public class ArchiveController
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
-            t.setName( "Content-Download" );
+            t.setName( "Download-" + t.getName() );
             t.setDaemon( true );
             return t;
         } );
@@ -129,6 +130,7 @@ public class ArchiveController
     {
         ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
+            t.setName( "Generate-" + t.getName() );
             t.setDaemon( true );
             return t;
         } );
@@ -146,7 +148,7 @@ public class ArchiveController
         try
         {
             downloadArtifacts( downloadPaths, content );
-            archive = generateArchive( content );
+            archive = generateArchive( new ArrayList<>( downloadPaths.values() ), content );
         }
         catch ( final InterruptedException e )
         {
@@ -176,41 +178,39 @@ public class ArchiveController
         return created;
     }
 
-    public Optional<File> getArchiveInputStream( final String buildConfigId ) throws IOException
+    public Optional<File> getArchiveInputStream( final String buildConfigId )
+            throws IOException
     {
-        File targetDir = new File( archiveDir );
-        if ( !targetDir.exists() )
+        File zip = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
+        if ( zip.exists() )
         {
-            return Optional.empty();
-        }
-
-        List<File> contents = walkAllFiles( archiveDir );
-        for ( File content : contents )
-        {
-            if ( content.getName().equals( buildConfigId + ARCHIVE_SUFFIX ) )
-            {
-                return Optional.of( content );
-            }
+            return Optional.of( zip );
         }
         return Optional.empty();
     }
 
-    public void deleteArchive( final String buildConfigId ) throws IOException
+    public void deleteArchive( final String buildConfigId )
+            throws IOException
     {
-        File targetDir = new File( archiveDir );
-        if ( !targetDir.exists() )
+        File zip = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
+        if ( zip.exists() )
         {
-            return;
+            zip.delete();
         }
-        List<File> contents = walkAllFiles( archiveDir );
-        for ( File content : contents )
+        logger.info( "Historical archive for build config id: {} is deleted.", buildConfigId );
+    }
+
+    public void cleanup()
+            throws IOException
+    {
+        File dir = new File( contentDir );
+        List<File> artifacts = walkAllFiles( contentDir );
+        for ( File artifact : artifacts )
         {
-            if ( content.getName().equals( buildConfigId + ARCHIVE_SUFFIX ) )
-            {
-                content.delete();
-            }
+            artifact.delete();
         }
-        logger.info( "Deleting historical archive finished for build config id: '{}'", buildConfigId );
+        dir.delete();
+        logger.info( "Temporary workplace cleanup is finished." );
     }
 
     public boolean statusExists( final String buildConfigId )
@@ -256,7 +256,8 @@ public class ArchiveController
         logger.info( "Artifacts download completed, success:{}, failed:{}", success, failed );
     }
 
-    private Optional<File> generateArchive( final HistoricalContentDTO content ) throws IOException
+    private Optional<File> generateArchive( final List<String> paths, final HistoricalContentDTO content )
+            throws IOException
     {
         String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
         File dir = new File( contentBuildDir );
@@ -270,16 +271,21 @@ public class ArchiveController
 
         logger.info( "Writing archive to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
-        List<File> artifacts = walkAllFiles( contentBuildDir );
 
         byte[] buffer = new byte[1024];
-        for ( File artifact : artifacts )
+        for ( String path : paths )
         {
-            logger.trace( "Adding {} to archive {} in folder {}", artifact.getName(), part.getName(), archiveDir );
+            logger.trace( "Adding {} to archive {} in folder {}", path, part.getName(), archiveDir );
+            File artifact = new File( contentBuildDir, path );
+            if ( !artifact.exists() )
+            {
+                logger.warn( "No such file found during zip entry put {}", artifact.getAbsolutePath() );
+                continue;
+            }
+            logger.trace( "Put file {} in the zip", artifact.getAbsolutePath() );
             FileInputStream fis = new FileInputStream( artifact );
-            String entryPath = artifact.getPath().split( contentBuildDir )[1];
 
-            zip.putNextEntry( new ZipEntry( entryPath ) );
+            zip.putNextEntry( new ZipEntry( path ) );
 
             int length;
             while ( ( length = fis.read( buffer ) ) > 0 )
@@ -290,13 +296,6 @@ public class ArchiveController
             fis.close();
         }
         zip.close();
-
-        //clean obsolete build contents
-        for ( File artifact : artifacts )
-        {
-            artifact.delete();
-        }
-        dir.delete();
         return Optional.of( part );
     }
 
@@ -357,8 +356,6 @@ public class ArchiveController
                                         final CookieStore cookieStore )
     {
         return () -> {
-            Thread.currentThread().setName( "download--" + path );
-
             final File target = new File( contentBuildDir, filePath );
             final File dir = target.getParentFile();
             dir.mkdirs();
@@ -422,12 +419,10 @@ public class ArchiveController
             {
                 treated.put( content.getName().split( PART_ARCHIVE_SUFFIX )[0],
                              ArchiveStatus.inProgress.getArchiveStatus() );
-                continue;
             }
             else if ( content.getName().endsWith( ARCHIVE_SUFFIX ) )
             {
                 treated.put( content.getName().split( ARCHIVE_SUFFIX )[0], ArchiveStatus.completed.getArchiveStatus() );
-                continue;
             }
         }
     }
