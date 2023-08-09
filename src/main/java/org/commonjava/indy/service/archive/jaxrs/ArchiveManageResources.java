@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.eventbus.EventBus;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.commonjava.indy.service.archive.controller.ArchiveController;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
 import org.commonjava.indy.service.archive.util.TransferStreamingOutput;
@@ -29,8 +28,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +37,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -49,7 +47,6 @@ import javax.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Optional;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -75,6 +72,7 @@ public class ArchiveManageResources
     @Inject
     EventBus bus;
 
+
     @Operation( description = "Generate archive based on tracked content" )
     @APIResponse( responseCode = "202", description = "The archive created request is accepted" )
     @RequestBody( description = "The tracked content definition JSON", name = "body", required = true, content = @Content( mediaType = APPLICATION_JSON, example =
@@ -85,12 +83,12 @@ public class ArchiveManageResources
     @POST
     @Path( "generate" )
     @Consumes( APPLICATION_JSON )
-    public Uni<Response> create( final @Context UriInfo uriInfo, final @Context HttpRequest request )
+    public Uni<Response> create( final @Context UriInfo uriInfo, final InputStream bodyContent )
     {
         HistoricalContentDTO content;
         try
         {
-            content = objectMapper.readValue( request.getInputStream(), HistoricalContentDTO.class );
+            content = objectMapper.readValue( bodyContent, HistoricalContentDTO.class );
             if ( content == null )
             {
                 final String message = "Failed to read historical content which is empty.";
