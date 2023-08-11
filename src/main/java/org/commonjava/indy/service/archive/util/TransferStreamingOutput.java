@@ -31,7 +31,7 @@ public class TransferStreamingOutput
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private InputStream stream;
+    private final InputStream stream;
 
     public TransferStreamingOutput( InputStream stream )
     {

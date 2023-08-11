@@ -6,7 +6,7 @@ quarkus:
       max-body-size: 5G
 
   package:
-    uber-jar: true
+    type: uber-jar
 
   # Logging (disable console on prod)
   log:
