@@ -272,6 +272,8 @@ public class ArchiveController
         logger.info( "Writing archive to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
 
+        // adding tracked file
+        paths.add( content.getBuildConfigId() );
         byte[] buffer = new byte[1024];
         for ( String path : paths )
         {
