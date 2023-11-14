@@ -61,8 +61,7 @@ public class HistoricalContentListReaderTest
         HistoricalContentDTO contentDTO = new HistoricalContentDTO( "8888", entryDTOs.toArray(
                         new HistoricalEntryDTO[entryDTOs.size()] ) );
 
-        PreSeedConfig preSeedConfig = new PreSeedConfig();
-        preSeedConfig.setMainIndy( Optional.of( MAIN_INDY ) );
+        TestPreSeedConfig preSeedConfig = new TestPreSeedConfig( Optional.of( MAIN_INDY ) );
         HistoricalContentListReader reader = new HistoricalContentListReader( preSeedConfig );
 
         Map<String, String> paths = reader.readPaths( contentDTO );
@@ -90,8 +89,7 @@ public class HistoricalContentListReaderTest
         HistoricalContentDTO contentDTO = new HistoricalContentDTO( "8888", entryDTOs.toArray(
                         new HistoricalEntryDTO[entryDTOs.size()] ) );
 
-        PreSeedConfig preSeedConfig = new PreSeedConfig();
-        preSeedConfig.setMainIndy( Optional.of( MAIN_INDY ) );
+        TestPreSeedConfig preSeedConfig = new TestPreSeedConfig( Optional.of( MAIN_INDY ) );
         HistoricalContentListReader reader = new HistoricalContentListReader( preSeedConfig );
 
         Map<String, String> paths = reader.readPaths( contentDTO );

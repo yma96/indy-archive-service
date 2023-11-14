@@ -114,7 +114,7 @@ public class ArchiveController
         RequestConfig rc = RequestConfig.custom().build();
         client = HttpClients.custom().setConnectionManager( ccm ).setDefaultRequestConfig( rc ).build();
 
-        String storeDir = preSeedConfig.storageDir.orElse( "data" );
+        String storeDir = preSeedConfig.storageDir().orElse( "data" );
         contentDir = String.format( "%s%s", storeDir, CONTENT_DIR );
         archiveDir = String.format( "%s%s", storeDir, ARCHIVE_DIR );
         restoreGenerateStatusFromDisk();
@@ -128,7 +128,8 @@ public class ArchiveController
 
     public void generate( HistoricalContentDTO content )
     {
-        ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
+        int threads = 4 * Runtime.getRuntime().availableProcessors();
+        ExecutorService generateExecutor = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
             t.setName( "Generate-" + t.getName() );
             t.setDaemon( true );
@@ -394,8 +395,7 @@ public class ArchiveController
             }
             catch ( final Exception e )
             {
-                e.printStackTrace();
-                logger.error( "Download failed for path: {}", path );
+                logger.error( "Download failed for path: " + path, e );
             }
             finally
             {

@@ -85,7 +85,7 @@ public class HistoricalContentListReader
 
     private void buildDownloadUrl ( HistoricalEntryDTO download )
     {
-        String baseUrl = preSeedConfig.mainIndy.orElse( null );
+        String baseUrl = preSeedConfig.mainIndy().orElse( null );
         if ( baseUrl == null )
         {
             return;
