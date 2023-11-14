@@ -114,7 +114,7 @@ public class ArchiveController
         RequestConfig rc = RequestConfig.custom().build();
         client = HttpClients.custom().setConnectionManager( ccm ).setDefaultRequestConfig( rc ).build();
 
-        String storeDir = preSeedConfig.storageDir.orElse( "data" );
+        String storeDir = preSeedConfig.storageDir().orElse( "data" );
         contentDir = String.format( "%s%s", storeDir, CONTENT_DIR );
         archiveDir = String.format( "%s%s", storeDir, ARCHIVE_DIR );
         restoreGenerateStatusFromDisk();
@@ -394,8 +394,7 @@ public class ArchiveController
             }
             catch ( final Exception e )
             {
-                e.printStackTrace();
-                logger.error( "Download failed for path: {}", path );
+                logger.error( "Download failed for path: " + path, e );
             }
             finally
             {

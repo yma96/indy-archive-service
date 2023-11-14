@@ -15,37 +15,18 @@
  */
 package org.commonjava.indy.service.archive.config;
 
-import io.quarkus.arc.config.ConfigProperties;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Optional;
 
-@ConfigProperties( prefix = "pre-seed" )
-public class PreSeedConfig
+@ConfigMapping( prefix = "pre-seed" )
+public interface PreSeedConfig
 {
-    @ConfigProperty( name = "main-indy" )
-    public Optional<String> mainIndy;
+    @WithName( "main-indy" )
+    public Optional<String> mainIndy();
 
-    @ConfigProperty( name = "storage-dir" )
-    public Optional<String> storageDir;
-
-    public Optional<String> getMainIndy()
-    {
-        return mainIndy;
-    }
-
-    public void setMainIndy( Optional<String> mainIndy )
-    {
-        this.mainIndy = mainIndy;
-    }
-
-    public Optional<String> getStorageDir()
-    {
-        return storageDir;
-    }
-
-    public void setStorageDir( Optional<String> storageDir )
-    {
-        this.storageDir = storageDir;
-    }
+    @WithName( "storage-dir" )
+    public Optional<String> storageDir();
 }

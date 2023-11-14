@@ -19,6 +19,8 @@ import org.apache.commons.io.FileUtils;
 import org.commonjava.indy.service.archive.controller.ArchiveController;
 import org.commonjava.indy.service.archive.model.ArchiveStatus;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
@@ -33,6 +35,8 @@ import static org.commonjava.indy.service.archive.util.TestUtil.getBytes;
 public class MockArchiveController
                 extends ArchiveController
 {
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
+
     public static final String NOT_FOUND_BUILD = "0000";
 
     public static final String EXIST_BUILD = "1111";
@@ -72,6 +76,7 @@ public class MockArchiveController
                 FileUtils.write( large, new String( getBytes( SIZE_20M ) ), "UTF-8" );
                 return Optional.of( large );
             case ERR_BUILD:
+                logger.error( "ERR_BUILD mock should throw Exception." );
                 throw new IOException();
             default:
                 return Optional.empty();
@@ -86,6 +91,7 @@ public class MockArchiveController
             super.deleteArchive( buildConfigId );
             return;
         }
+        logger.error( "No existed build archive to be deleted for buildConfigId {}.", buildConfigId );
         throw new IOException();
     }
 
