@@ -128,7 +128,8 @@ public class ArchiveController
 
     public void generate( HistoricalContentDTO content )
     {
-        ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
+        int threads = 4 * Runtime.getRuntime().availableProcessors();
+        ExecutorService generateExecutor = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
             t.setName( "Generate-" + t.getName() );
             t.setDaemon( true );
