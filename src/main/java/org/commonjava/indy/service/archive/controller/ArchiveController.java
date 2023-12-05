@@ -389,7 +389,9 @@ public class ArchiveController
                 }
                 else
                 {
-                    logger.warn( "<<<Error path: {}", path );
+                    logger.warn( "<<<Error path: {}, statusCode: {}, protocol: {}, reason:{}.", path, statusCode,
+                                 response.getStatusLine().getProtocolVersion().getProtocol(),
+                                 response.getStatusLine().getReasonPhrase() );
                     return false;
                 }
             }
