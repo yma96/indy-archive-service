@@ -380,6 +380,7 @@ public class ArchiveController
                         IOUtils.copy( input, out );
                     }
                     part.renameTo( target );
+                    logger.trace( "<<<Downloaded path: {}", path );
                     return true;
                 }
                 else if ( statusCode == 404 )

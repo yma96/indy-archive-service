@@ -44,5 +44,5 @@ quarkus:
     always-include: true
 
 pre-seed:
-  main-indy: http://indy-master-indy-preview.apps.ocp-c1.prod.psi.redhat.com
+  main-indy: http://indy-gateway-master-indy-preview.apps.ocp-c1.prod.psi.redhat.com
   storage-dir: data
