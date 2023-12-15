@@ -11,7 +11,7 @@ quarkus:
   # Logging (disable console on prod)
   log:
     level: INFO
-    min-level: INFO
+    min-level: TRACE
     category:
       "org.jboss":
         level: WARN
