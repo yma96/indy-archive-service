@@ -21,7 +21,7 @@ import org.commonjava.indy.service.archive.ftests.profile.ArchiveFunctionProfile
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import java.io.File;
 
 import static io.restassured.RestAssured.given;

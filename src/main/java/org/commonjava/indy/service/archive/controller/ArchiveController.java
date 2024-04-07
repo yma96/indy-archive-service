@@ -16,6 +16,10 @@
 package org.commonjava.indy.service.archive.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
@@ -33,10 +37,6 @@ import org.commonjava.indy.service.archive.util.HistoricalContentListReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -98,7 +98,8 @@ public class ArchiveController
     private final Map<String, String> treated = new HashMap<>();
 
     @PostConstruct
-    public void init() throws IOException
+    public void init()
+            throws IOException
     {
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {

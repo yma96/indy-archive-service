@@ -25,8 +25,8 @@ import java.io.File;
 import java.io.IOException;
 
 import static io.restassured.RestAssured.given;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.Status.NO_CONTENT;
 import static org.commonjava.indy.service.archive.jaxrs.mock.MockArchiveController.EXIST_BUILD;
 import static org.commonjava.indy.service.archive.jaxrs.mock.MockArchiveController.EXIST_BUILD_ARCHIVE;
 import static org.commonjava.indy.service.archive.jaxrs.mock.MockArchiveController.NOT_FOUND_BUILD;

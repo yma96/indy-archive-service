@@ -20,12 +20,12 @@ import io.quarkus.test.junit.TestProfile;
 import org.commonjava.indy.service.archive.jaxrs.mock.MockTestProfile;
 import org.junit.jupiter.api.Test;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import static io.restassured.RestAssured.given;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.OK;
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
+import static jakarta.ws.rs.core.Response.Status.OK;
 import static org.commonjava.indy.service.archive.jaxrs.mock.MockArchiveController.ERR_BUILD;
 import static org.commonjava.indy.service.archive.jaxrs.mock.MockArchiveController.EXIST_BUILD;
 import static org.commonjava.indy.service.archive.jaxrs.mock.MockArchiveController.EXIST_LARGE_BUILD;

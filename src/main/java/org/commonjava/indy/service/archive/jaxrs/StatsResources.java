@@ -20,12 +20,12 @@ import io.vertx.core.json.JsonObject;
 import org.commonjava.indy.service.archive.controller.StatsController;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Tag( name = "Generic Infrastructure Queries (UI Support)",
                 description = "Read-only operations for retrieving information about this system" )
