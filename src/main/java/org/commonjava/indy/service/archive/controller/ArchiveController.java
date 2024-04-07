@@ -114,7 +114,7 @@ public class ArchiveController
         RequestConfig rc = RequestConfig.custom().build();
         client = HttpClients.custom().setConnectionManager( ccm ).setDefaultRequestConfig( rc ).build();
 
-        String storeDir = preSeedConfig.storageDir.orElse( "data" );
+        String storeDir = preSeedConfig.storageDir().orElse( "data" );
         contentDir = String.format( "%s%s", storeDir, CONTENT_DIR );
         archiveDir = String.format( "%s%s", storeDir, ARCHIVE_DIR );
         restoreGenerateStatusFromDisk();
@@ -128,7 +128,8 @@ public class ArchiveController
 
     public void generate( HistoricalContentDTO content )
     {
-        ExecutorService generateExecutor = Executors.newFixedThreadPool( 2, ( final Runnable r ) -> {
+        int threads = 4 * Runtime.getRuntime().availableProcessors();
+        ExecutorService generateExecutor = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
             t.setName( "Generate-" + t.getName() );
             t.setDaemon( true );
@@ -272,6 +273,8 @@ public class ArchiveController
         logger.info( "Writing archive to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
 
+        // adding tracked file
+        paths.add( content.getBuildConfigId() );
         byte[] buffer = new byte[1024];
         for ( String path : paths )
         {
@@ -377,6 +380,7 @@ public class ArchiveController
                         IOUtils.copy( input, out );
                     }
                     part.renameTo( target );
+                    logger.trace( "<<<Downloaded path: {}", path );
                     return true;
                 }
                 else if ( statusCode == 404 )
@@ -386,14 +390,15 @@ public class ArchiveController
                 }
                 else
                 {
-                    logger.warn( "<<<Error path: {}", path );
+                    logger.warn( "<<<Error path: {}, statusCode: {}, protocol: {}, reason:{}.", path, statusCode,
+                                 response.getStatusLine().getProtocolVersion().getProtocol(),
+                                 response.getStatusLine().getReasonPhrase() );
                     return false;
                 }
             }
             catch ( final Exception e )
             {
-                e.printStackTrace();
-                logger.error( "Download failed for path: {}", path );
+                logger.error( "Download failed for path: " + path, e );
             }
             finally
             {
