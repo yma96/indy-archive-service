@@ -22,8 +22,8 @@ import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Alternative;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;

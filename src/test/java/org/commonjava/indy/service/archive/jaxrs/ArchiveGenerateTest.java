@@ -20,10 +20,10 @@ import io.quarkus.test.junit.TestProfile;
 import org.commonjava.indy.service.archive.jaxrs.mock.MockTestProfile;
 import org.junit.jupiter.api.Test;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import static io.restassured.RestAssured.given;
-import static javax.ws.rs.core.Response.Status.ACCEPTED;
+import static jakarta.ws.rs.core.Response.Status.ACCEPTED;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.anyOf;
 

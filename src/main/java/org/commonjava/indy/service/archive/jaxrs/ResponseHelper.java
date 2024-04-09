@@ -17,12 +17,12 @@ package org.commonjava.indy.service.archive.jaxrs;
 
 import io.smallrye.mutiny.Uni;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 
-import static javax.ws.rs.core.Response.serverError;
+import static jakarta.ws.rs.core.Response.serverError;
 
 public class ResponseHelper
 {

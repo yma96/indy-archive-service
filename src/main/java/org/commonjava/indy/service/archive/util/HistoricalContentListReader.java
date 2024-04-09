@@ -19,8 +19,8 @@ import org.commonjava.indy.service.archive.config.PreSeedConfig;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
 import org.commonjava.indy.service.archive.model.dto.HistoricalEntryDTO;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
