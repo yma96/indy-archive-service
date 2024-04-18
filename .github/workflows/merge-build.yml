@@ -63,6 +63,12 @@ jobs:
           repository: Commonjava/commonjava-images
           path: commonjava-images
 
+      - name: Locate artifacts
+        id: locate-artifacts
+        run: |
+          tarball=$(ls -d $PWD/target/*-runner.jar)
+          cp "$tarball" "commonjava-images/indy-archive-service/indy-archive-service-runner.jar"
+
       - name: Log in to Quay.io
         uses: redhat-actions/podman-login@v1
         with:
