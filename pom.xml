@@ -98,6 +98,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
     <!-- quarkus otel deps -->
     <dependency>
       <groupId>io.quarkus</groupId>

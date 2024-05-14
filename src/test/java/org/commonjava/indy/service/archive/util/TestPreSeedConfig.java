@@ -22,6 +22,13 @@ public class TestPreSeedConfig
     @Override
     public Optional<String> storageDir()
     {
-        return Optional.of("data");
+        return Optional.of( "data" );
     }
+
+    @Override
+    public Optional<Long> notUsedDaysCleanup()
+    {
+        return Optional.of( 365l );
+    }
+
 }
