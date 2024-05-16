@@ -66,11 +66,11 @@ public class ArchiveController
 
     public final static String EVENT_GENERATE_ARCHIVE = "generate-archive";
 
+    public final static String CONTENT_DIR = "/content";
+
+    public final static String ARCHIVE_DIR = "/archive";
+
     private final Logger logger = LoggerFactory.getLogger( getClass() );
-
-    private final String CONTENT_DIR = "/content";
-
-    private final String ARCHIVE_DIR = "/archive";
 
     private final String ARCHIVE_SUFFIX = ".zip";
 
@@ -325,7 +325,8 @@ public class ArchiveController
         return true;
     }
 
-    private List<File> walkAllFiles( String path ) throws IOException
+    public List<File> walkAllFiles( String path )
+            throws IOException
     {
         List<File> contents = Files.walk( Paths.get( path ) )
                                    .filter( Files::isRegularFile )

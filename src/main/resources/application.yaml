@@ -46,3 +46,4 @@ quarkus:
 pre-seed:
   main-indy: https://indy-gateway-master-devel.psi.redhat.com
   storage-dir: data
+  not-used-days-cleanup: 10

@@ -17,7 +17,6 @@ package org.commonjava.indy.service.archive.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Optional;
 
@@ -29,4 +28,7 @@ public interface PreSeedConfig
 
     @WithName( "storage-dir" )
     public Optional<String> storageDir();
+
+    @WithName( "not-used-days-cleanup" )
+    Optional<Long> notUsedDaysCleanup();
 }
