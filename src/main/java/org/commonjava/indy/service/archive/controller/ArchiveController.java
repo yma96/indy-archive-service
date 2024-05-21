@@ -58,6 +58,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 @ApplicationScoped
@@ -226,7 +227,7 @@ public class ArchiveController
     }
 
     private void downloadArtifacts( final Map<String, String> downloadPaths, final HistoricalContentDTO content )
-                    throws InterruptedException, ExecutionException
+            throws InterruptedException, ExecutionException, IOException
     {
         BasicCookieStore cookieStore = new BasicCookieStore();
         ExecutorCompletionService<Boolean> executor = new ExecutorCompletionService<>( executorService );
@@ -236,6 +237,7 @@ public class ArchiveController
         dir.delete();
 
         fileTrackedContent( contentBuildDir, content );
+        unpackHistoricalArchive( contentBuildDir, content.getBuildConfigId() );
 
         for ( String path : downloadPaths.keySet() )
         {
@@ -300,6 +302,16 @@ public class ArchiveController
             fis.close();
         }
         zip.close();
+
+        for ( String path : paths )
+        {
+            logger.debug( "Clean temporary content workplace dir {}, path {}", contentBuildDir, path );
+            File artifact = new File( contentBuildDir, path );
+            artifact.delete();
+        }
+        logger.debug( "Clean temporary content workplace dir {}", contentBuildDir );
+        dir.delete();
+
         return Optional.of( part );
     }
 
@@ -357,11 +369,42 @@ public class ArchiveController
         }
     }
 
+    private void unpackHistoricalArchive( String contentBuildDir, String buildConfigId )
+            throws IOException
+    {
+        final File archive = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
+        if ( !archive.exists() )
+        {
+            logger.debug( "Don't find historical archive for buildConfigId: {}.", buildConfigId );
+            return;
+        }
+
+        logger.info( "Start unpacking historical archive for buildConfigId: {}.", buildConfigId );
+        ZipInputStream inputStream = new ZipInputStream( new FileInputStream( archive ) );
+        ZipEntry entry;
+        while ( ( entry = inputStream.getNextEntry() ) != null )
+        {
+            File outputFile = new File( contentBuildDir, entry.getName() );
+            outputFile.getParentFile().mkdirs();
+            try ( FileOutputStream outputStream = new FileOutputStream( outputFile ) )
+            {
+                inputStream.transferTo( outputStream );
+            }
+
+        }
+        inputStream.close();
+    }
+
     private Callable<Boolean> download( String contentBuildDir, final String path, final String filePath,
                                         final CookieStore cookieStore )
     {
         return () -> {
             final File target = new File( contentBuildDir, filePath );
+            if ( target.exists() )
+            {
+                logger.trace( "<<<Already existed in historical archive, skip downloading, path: {}.", path );
+                return true;
+            }
             final File dir = target.getParentFile();
             dir.mkdirs();
             final File part = new File( dir, target.getName() + PART_SUFFIX );
