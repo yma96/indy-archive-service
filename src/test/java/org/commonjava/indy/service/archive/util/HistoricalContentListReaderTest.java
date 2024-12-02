@@ -16,7 +16,6 @@
 package org.commonjava.indy.service.archive.util;
 
 import io.quarkus.test.junit.QuarkusTest;
-import org.commonjava.indy.service.archive.config.PreSeedConfig;
 import org.commonjava.indy.service.archive.model.StoreKey;
 import org.commonjava.indy.service.archive.model.StoreType;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
@@ -24,6 +23,7 @@ import org.commonjava.indy.service.archive.model.dto.HistoricalEntryDTO;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,13 +58,15 @@ public class HistoricalContentListReaderTest
         entryDTOs.add( entry );
         entryDTOs.add( metaEntry );
 
-        HistoricalContentDTO contentDTO = new HistoricalContentDTO( "8888", entryDTOs.toArray(
-                        new HistoricalEntryDTO[entryDTOs.size()] ) );
+        HistoricalContentDTO contentDTO =
+                new HistoricalContentDTO( "8888", entryDTOs.toArray( new HistoricalEntryDTO[entryDTOs.size()] ) );
 
         TestPreSeedConfig preSeedConfig = new TestPreSeedConfig( Optional.of( MAIN_INDY ) );
         HistoricalContentListReader reader = new HistoricalContentListReader( preSeedConfig );
 
-        Map<String, String> paths = reader.readPaths( contentDTO );
+        Map<String, HistoricalEntryDTO> entryMaps = reader.readEntries( contentDTO );
+        Map<String, String> paths = new HashMap<>();
+        entryMaps.forEach( ( key, value ) -> paths.put( key, value.getPath() ) );
 
         assertThat( paths.size(), equalTo( 1 ) );
         String storePath = MAIN_INDY + "/api/content" + entry.getStorePath();
@@ -86,13 +88,15 @@ public class HistoricalContentListReaderTest
         entryDTOs.add( npmEntry );
         entryDTOs.add( npmMetaEntry );
 
-        HistoricalContentDTO contentDTO = new HistoricalContentDTO( "8888", entryDTOs.toArray(
-                        new HistoricalEntryDTO[entryDTOs.size()] ) );
+        HistoricalContentDTO contentDTO =
+                new HistoricalContentDTO( "8888", entryDTOs.toArray( new HistoricalEntryDTO[entryDTOs.size()] ) );
 
         TestPreSeedConfig preSeedConfig = new TestPreSeedConfig( Optional.of( MAIN_INDY ) );
         HistoricalContentListReader reader = new HistoricalContentListReader( preSeedConfig );
 
-        Map<String, String> paths = reader.readPaths( contentDTO );
+        Map<String, HistoricalEntryDTO> entryMaps = reader.readEntries( contentDTO );
+        Map<String, String> paths = new HashMap<>();
+        entryMaps.forEach( ( key, value ) -> paths.put( key, value.getPath() ) );
 
         assertThat( paths.size(), equalTo( 1 ) );
         String storePath = MAIN_INDY + "/api/content" + npmEntry.getStorePath();

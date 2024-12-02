@@ -33,6 +33,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.commonjava.indy.service.archive.config.PreSeedConfig;
 import org.commonjava.indy.service.archive.model.ArchiveStatus;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
+import org.commonjava.indy.service.archive.model.dto.HistoricalEntryDTO;
 import org.commonjava.indy.service.archive.util.HistoricalContentListReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,10 +48,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -78,6 +84,15 @@ public class ArchiveController
     private final String PART_SUFFIX = ".part";
 
     private final String PART_ARCHIVE_SUFFIX = PART_SUFFIX + ARCHIVE_SUFFIX;
+
+    private static final Set<String> CHECKSUMS = Collections.unmodifiableSet( new HashSet<String>()
+    {
+        {
+            add( ".md5" );
+            add( ".sha1" );
+            add( ".sha256" );
+        }
+    } );
 
     @Inject
     HistoricalContentListReader reader;
@@ -146,11 +161,14 @@ public class ArchiveController
                      content.getBuildConfigId() );
         recordInProgress( content.getBuildConfigId() );
 
-        Map<String, String> downloadPaths = reader.readPaths( content );
+        Map<String, HistoricalEntryDTO> entryDTOs = reader.readEntries( content );
+        Map<String, String> downloadPaths = new HashMap<>();
+        entryDTOs.forEach( ( key, value ) -> downloadPaths.put( key, value.getPath() ) );
+
         Optional<File> archive;
         try
         {
-            downloadArtifacts( downloadPaths, content );
+            downloadArtifacts( entryDTOs, downloadPaths, content );
             archive = generateArchive( new ArrayList<>( downloadPaths.values() ), content );
         }
         catch ( final InterruptedException e )
@@ -226,7 +244,8 @@ public class ArchiveController
         return treated.get( buildConfigId );
     }
 
-    private void downloadArtifacts( final Map<String, String> downloadPaths, final HistoricalContentDTO content )
+    private void downloadArtifacts( final Map<String, HistoricalEntryDTO> entryDTOs,
+                                    final Map<String, String> downloadPaths, final HistoricalContentDTO content )
             throws InterruptedException, ExecutionException, IOException
     {
         BasicCookieStore cookieStore = new BasicCookieStore();
@@ -236,13 +255,23 @@ public class ArchiveController
         File dir = new File( contentBuildDir );
         dir.delete();
 
-        fileTrackedContent( contentBuildDir, content );
-        unpackHistoricalArchive( contentBuildDir, content.getBuildConfigId() );
+        HistoricalContentDTO originalTracked = unpackHistoricalArchive( contentBuildDir, content.getBuildConfigId() );
+        Map<String, List<String>> originalChecksumsMap = new HashMap<>();
+        if ( originalTracked != null )
+        {
+            Map<String, HistoricalEntryDTO> originalEntries = reader.readEntries( originalTracked );
+            originalEntries.forEach( ( key, entry ) -> originalChecksumsMap.put( key, new ArrayList<>(
+                    Arrays.asList( entry.getSha1(), entry.getSha256(), entry.getMd5() ) ) ) );
+        }
 
         for ( String path : downloadPaths.keySet() )
         {
             String filePath = downloadPaths.get( path );
-            executor.submit( download( contentBuildDir, path, filePath, cookieStore ) );
+            HistoricalEntryDTO entry = entryDTOs.get( path );
+            List<String> checksums =
+                    new ArrayList<>( Arrays.asList( entry.getSha1(), entry.getSha256(), entry.getMd5() ) );
+            List<String> originalChecksums = originalChecksumsMap.get( path );
+            executor.submit( download( contentBuildDir, path, filePath, checksums, originalChecksums, cookieStore ) );
         }
         int success = 0;
         int failed = 0;
@@ -257,6 +286,8 @@ public class ArchiveController
                 failed++;
             }
         }
+        // file the latest tracked json at the end
+        fileTrackedContent( contentBuildDir, content );
         logger.info( "Artifacts download completed, success:{}, failed:{}", success, failed );
     }
 
@@ -369,14 +400,14 @@ public class ArchiveController
         }
     }
 
-    private void unpackHistoricalArchive( String contentBuildDir, String buildConfigId )
+    private HistoricalContentDTO unpackHistoricalArchive( String contentBuildDir, String buildConfigId )
             throws IOException
     {
         final File archive = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
         if ( !archive.exists() )
         {
             logger.debug( "Don't find historical archive for buildConfigId: {}.", buildConfigId );
-            return;
+            return null;
         }
 
         logger.info( "Start unpacking historical archive for buildConfigId: {}.", buildConfigId );
@@ -393,16 +424,53 @@ public class ArchiveController
 
         }
         inputStream.close();
+
+        File originalTracked = new File( contentBuildDir, buildConfigId );
+        if ( originalTracked.exists() )
+        {
+            return objectMapper.readValue( originalTracked, HistoricalContentDTO.class );
+        }
+        else
+        {
+            logger.debug( "No tracked json file found after zip unpack for buildConfigId {}", buildConfigId );
+            return null;
+        }
     }
 
-    private Callable<Boolean> download( String contentBuildDir, final String path, final String filePath,
+    private boolean validateChecksum( final String filePath, final List<String> current, final List<String> original )
+    {
+        if ( CHECKSUMS.stream().anyMatch( suffix -> filePath.toLowerCase().endsWith( "." + suffix ) ) )
+        {
+            // skip to validate checksum files
+            return false;
+        }
+        if ( original == null || original.isEmpty() || original.stream().allMatch( Objects::isNull ) )
+        {
+            return false;
+        }
+        if ( original.get( 0 ) != null && original.get( 0 ).equals( current.get( 0 ) ) )
+        {
+            return true;
+        }
+        if ( original.get( 1 ) != null && original.get( 1 ).equals( current.get( 1 ) ) )
+        {
+            return true;
+        }
+        return original.get( 2 ) != null && original.get( 2 ).equals( current.get( 2 ) );
+    }
+
+    private Callable<Boolean> download( final String contentBuildDir, final String path, final String filePath,
+                                        final List<String> checksums, final List<String> originalChecksums,
                                         final CookieStore cookieStore )
     {
         return () -> {
             final File target = new File( contentBuildDir, filePath );
-            if ( target.exists() )
+
+            if ( target.exists() && validateChecksum( filePath, checksums, originalChecksums ) )
             {
-                logger.trace( "<<<Already existed in historical archive, skip downloading, path: {}.", path );
+                logger.debug(
+                        "<<<Already existed in historical archive, and checksum equals, skip downloading, path: {}.",
+                        path );
                 return true;
             }
             final File dir = target.getParentFile();

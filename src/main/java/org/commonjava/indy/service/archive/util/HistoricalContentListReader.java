@@ -15,12 +15,12 @@
  */
 package org.commonjava.indy.service.archive.util;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.commonjava.indy.service.archive.config.PreSeedConfig;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
 import org.commonjava.indy.service.archive.model.dto.HistoricalEntryDTO;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,41 +43,42 @@ public class HistoricalContentListReader
         this.preSeedConfig = preSeedConfig;
     }
 
-    public Map<String, String> readPaths( HistoricalContentDTO content  )
+    public Map<String, HistoricalEntryDTO> readEntries( HistoricalContentDTO content )
     {
-        Map<String, String> pathMap = new HashMap<>();
+        Map<String, HistoricalEntryDTO> pathMap = new HashMap<>();
         HistoricalEntryDTO[] downloads = content.getDownloads();
 
-        if ( downloads != null )
+        if ( downloads == null )
         {
-            for ( HistoricalEntryDTO download : downloads )
+            return pathMap;
+        }
+        for ( HistoricalEntryDTO download : downloads )
+        {
+            String path = download.getPath();
+            String packageType = download.getStoreKey().getPackageType();
+
+            if ( packageType.equals( NPM_PKG_KEY ) && !path.endsWith( ".tgz" ) )
             {
-                String path = download.getPath();
-                String packageType = download.getStoreKey().getPackageType();
+                // Ignore the npm package metadata in archive
+                continue;
+            }
+            if ( path.contains( "maven-metadata.xml" ) )
+            {
+                // Ignore maven-metadata.xml in archive
+                continue;
+            }
+            // ensure every entry has an available localUrl
+            buildDownloadUrl( download );
 
-                if ( packageType.equals( NPM_PKG_KEY ) && !path.endsWith( ".tgz" ) )
-                {
-                    // Ignore the npm package metadata in archive
-                    continue;
-                }
-                if ( path.contains( "maven-metadata.xml" ) )
-                {
-                    // Ignore maven-metadata.xml in archive
-                    continue;
-                }
-                // ensure every entry has an available localUrl
-                buildDownloadUrl( download );
-
-                // local url would be preferred to download artifact
-                String url = download.getLocalUrl();
-                if ( url == null )
-                {
-                    url = download.getOriginUrl();
-                }
-                if ( url != null )
-                {
-                    pathMap.put( url, download.getPath() );
-                }
+            // local url would be preferred to download artifact
+            String url = download.getLocalUrl();
+            if ( url == null )
+            {
+                url = download.getOriginUrl();
+            }
+            if ( url != null )
+            {
+                pathMap.put( url, download );
             }
         }
         return pathMap;
