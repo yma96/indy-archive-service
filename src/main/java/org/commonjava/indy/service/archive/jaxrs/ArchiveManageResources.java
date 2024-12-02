@@ -188,6 +188,27 @@ public class ArchiveManageResources
         return Uni.createFrom().item( noContent().build() );
     }
 
+    @Operation( description = "Delete the archive by buildConfigId and checksum" )
+    @APIResponse( responseCode = "204", description = "The history archive is deleted or doesn't exist" )
+    @Path( "{buildConfigId}/{checksum}" )
+    @DELETE
+    public Uni<Response> deleteWithChecksum( final @PathParam( "buildConfigId" ) String buildConfigId,
+                                             final @PathParam( "checksum" ) String checksum,
+                                             final @Context UriInfo uriInfo )
+    {
+        try
+        {
+            controller.deleteArchiveWithChecksum( buildConfigId, checksum );
+        }
+        catch ( final IOException e )
+        {
+            final String message = "Failed to delete historical archive for build config id: " + buildConfigId;
+            logger.error( message, e );
+            return fromResponse( message );
+        }
+        return Uni.createFrom().item( noContent().build() );
+    }
+
     @Operation( description = "Clean up all the temp workplace" )
     @APIResponse( responseCode = "204", description = "The workplace cleanup is finished" )
     @Path( "cleanup" )

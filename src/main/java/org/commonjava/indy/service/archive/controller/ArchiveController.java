@@ -29,6 +29,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.commonjava.indy.service.archive.config.PreSeedConfig;
 import org.commonjava.indy.service.archive.model.ArchiveStatus;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
@@ -43,11 +44,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +90,16 @@ public class ArchiveController
 
     private final String PART_ARCHIVE_SUFFIX = PART_SUFFIX + ARCHIVE_SUFFIX;
 
+    private static final int threads = 4 * Runtime.getRuntime().availableProcessors();
+
+    private final ExecutorService generateExecutor =
+            Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
+                final Thread t = new Thread( r );
+                t.setName( "Generate-" + t.getName() );
+                t.setDaemon( true );
+                return t;
+            } );
+
     private static final Set<String> CHECKSUMS = Collections.unmodifiableSet( new HashSet<String>()
     {
         {
@@ -99,15 +111,13 @@ public class ArchiveController
 
     private static final Map<String, Object> buildConfigLocks = new ConcurrentHashMap<>();
 
-    private static final int threads = 4 * Runtime.getRuntime().availableProcessors();
+    private static final String SHA_256 = "SHA-256";
 
-    private static final ExecutorService generateExecutor =
-            Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
-                final Thread t = new Thread( r );
-                t.setName( "Generate-" + t.getName() );
-                t.setDaemon( true );
-                return t;
-            } );
+    private static final Long BOLCK_SIZE = 100 * 1024 * 1024L;
+
+    private static final String HEX_DIGITS = "0123456789abcdef";
+
+    private static final char[] HEX_ARRAY = HEX_DIGITS.toCharArray();
 
     @Inject
     HistoricalContentListReader reader;
@@ -130,7 +140,7 @@ public class ArchiveController
 
     @PostConstruct
     public void init()
-            throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException
+            throws IOException
     {
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
@@ -140,8 +150,11 @@ public class ArchiveController
             return t;
         } );
 
+        final PoolingHttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager();
+        ccm.setMaxTotal( 500 );
+
         RequestConfig rc = RequestConfig.custom().build();
-        client = HttpClients.custom().setDefaultRequestConfig( rc ).build();
+        client = HttpClients.custom().setConnectionManager( ccm ).setDefaultRequestConfig( rc ).build();
 
         String storeDir = preSeedConfig.storageDir().orElse( "data" );
         contentDir = String.format( "%s%s", storeDir, CONTENT_DIR );
@@ -257,6 +270,64 @@ public class ArchiveController
             zip.delete();
         }
         logger.info( "Historical archive for build config id: {} is deleted.", buildConfigId );
+    }
+
+    public void deleteArchiveWithChecksum( final String buildConfigId, final String checksum )
+            throws IOException
+    {
+        logger.info( "Start to delete archive with checksum validation, buildConfigId {}, checksum {}", buildConfigId,
+                     checksum );
+        File zip = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
+        if ( !zip.exists() )
+        {
+            return;
+        }
+
+        try (FileChannel channel = new FileInputStream( zip ).getChannel())
+        {
+            MessageDigest digest = MessageDigest.getInstance( SHA_256 );
+            long position = 0;
+            long size = channel.size();
+
+            while ( position < size )
+            {
+                long remaining = size - position;
+                long currentBlock = Math.min( remaining, BOLCK_SIZE );
+                MappedByteBuffer buffer = channel.map( FileChannel.MapMode.READ_ONLY, position, currentBlock );
+                digest.update( buffer );
+                position += currentBlock;
+            }
+
+            String stored = bytesToHex( digest.digest() );
+            // only delete the zip once checksum is equaled
+            if ( stored.equals( checksum ) )
+            {
+                zip.delete();
+                logger.info( "Historical archive for build config id: {} is deleted, checksum {}.", buildConfigId,
+                             stored );
+            }
+            else
+            {
+                logger.info( "Don't delete the {} zip, transferred checksum {}, but stored checksum {}.", buildConfigId,
+                             checksum, stored );
+            }
+        }
+        catch ( NoSuchAlgorithmException e )
+        {
+            logger.error( "No such algorithm SHA-256 Exception", e );
+        }
+    }
+
+    private String bytesToHex( byte[] hash )
+    {
+        char[] hexChars = new char[hash.length * 2];
+        for ( int i = 0; i < hash.length; i++ )
+        {
+            int v = hash[i] & 0xFF;
+            hexChars[i * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[i * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String( hexChars );
     }
 
     public void cleanup()
