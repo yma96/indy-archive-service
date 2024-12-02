@@ -18,6 +18,19 @@ package org.commonjava.indy.service.archive.jaxrs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.eventbus.EventBus;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.io.FileUtils;
 import org.commonjava.indy.service.archive.controller.ArchiveController;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
@@ -31,19 +44,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.PathParam;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
-import jakarta.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,14 +72,15 @@ public class ArchiveManageResources
     @Inject
     EventBus bus;
 
-
     @Operation( description = "Generate archive based on tracked content" )
     @APIResponse( responseCode = "202", description = "The archive created request is accepted" )
-    @RequestBody( description = "The tracked content definition JSON", name = "body", required = true, content = @Content( mediaType = APPLICATION_JSON, example =
-                    "{" + "\"buildConfigId\": \"XXX\"," + "\"downloads\":" + "[{" + "    \"storeKey\": \"\","
-                                    + "    \"path\": \"\"," + "    \"md5\": \"\"," + "    \"sha256\": \"\","
-                                    + "    \"sha1\": \"\"," + "    \"size\": 001" + "  }," + "..."
-                                    + "]}", schema = @Schema( implementation = HistoricalContentDTO.class ) ) )
+    @RequestBody( description = "The tracked content definition JSON", name = "body", required = true,
+                  content = @Content( mediaType = APPLICATION_JSON,
+                                      example = "{" + "\"buildConfigId\": \"XXX\"," + "\"downloads\":" + "[{"
+                                              + "    \"storeKey\": \"\"," + "    \"path\": \"\"," + "    \"md5\": \"\","
+                                              + "    \"sha256\": \"\"," + "    \"sha1\": \"\"," + "    \"size\": 001"
+                                              + "  }," + "..." + "]}",
+                                      schema = @Schema( implementation = HistoricalContentDTO.class ) ) )
     @POST
     @Path( "generate" )
     @Consumes( APPLICATION_JSON )

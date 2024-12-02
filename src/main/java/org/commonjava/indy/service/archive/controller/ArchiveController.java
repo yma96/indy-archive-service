@@ -29,7 +29,6 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.commonjava.indy.service.archive.config.PreSeedConfig;
 import org.commonjava.indy.service.archive.model.ArchiveStatus;
 import org.commonjava.indy.service.archive.model.dto.HistoricalContentDTO;
@@ -47,6 +46,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,6 +60,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -94,6 +97,18 @@ public class ArchiveController
         }
     } );
 
+    private static final Map<String, Object> buildConfigLocks = new ConcurrentHashMap<>();
+
+    private static final int threads = 4 * Runtime.getRuntime().availableProcessors();
+
+    private static final ExecutorService generateExecutor =
+            Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
+                final Thread t = new Thread( r );
+                t.setName( "Generate-" + t.getName() );
+                t.setDaemon( true );
+                return t;
+            } );
+
     @Inject
     HistoricalContentListReader reader;
 
@@ -115,7 +130,7 @@ public class ArchiveController
 
     @PostConstruct
     public void init()
-            throws IOException
+            throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException
     {
         int threads = 4 * Runtime.getRuntime().availableProcessors();
         executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
@@ -125,11 +140,8 @@ public class ArchiveController
             return t;
         } );
 
-        final PoolingHttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager();
-        ccm.setMaxTotal( 500 );
-
         RequestConfig rc = RequestConfig.custom().build();
-        client = HttpClients.custom().setConnectionManager( ccm ).setDefaultRequestConfig( rc ).build();
+        client = HttpClients.custom().setDefaultRequestConfig( rc ).build();
 
         String storeDir = preSeedConfig.storageDir().orElse( "data" );
         contentDir = String.format( "%s%s", storeDir, CONTENT_DIR );
@@ -145,21 +157,48 @@ public class ArchiveController
 
     public void generate( HistoricalContentDTO content )
     {
-        int threads = 4 * Runtime.getRuntime().availableProcessors();
-        ExecutorService generateExecutor = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
-            final Thread t = new Thread( r );
-            t.setName( "Generate-" + t.getName() );
-            t.setDaemon( true );
-            return t;
-        } );
-        generateExecutor.execute( () -> doGenerate( content ) );
+        String buildConfigId = content.getBuildConfigId();
+        Object lock = buildConfigLocks.computeIfAbsent( buildConfigId, k -> new Object() );
+        synchronized ( lock )
+        {
+            while ( isInProgress( buildConfigId ) )
+            {
+                logger.info( "There is already generation process in progress for buildConfigId {}, try lock wait.",
+                             buildConfigId );
+                try
+                {
+                    lock.wait();
+                }
+                catch ( InterruptedException e )
+                {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+            recordInProgress( content.getBuildConfigId() );
+            generateExecutor.execute( () -> {
+                try
+                {
+                    doGenerate( content );
+                }
+                finally
+                {
+                    synchronized ( lock )
+                    {
+                        recordCompleted( content.getBuildConfigId() );
+                        buildConfigLocks.remove( buildConfigId );
+                        lock.notifyAll();
+                        logger.info( "lock released, buildConfigId {}", buildConfigId );
+                    }
+                }
+            } );
+        }
     }
 
     protected Boolean doGenerate( HistoricalContentDTO content )
     {
         logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE,
                      content.getBuildConfigId() );
-        recordInProgress( content.getBuildConfigId() );
 
         Map<String, HistoricalEntryDTO> entryDTOs = reader.readEntries( content );
         Map<String, String> downloadPaths = new HashMap<>();
@@ -195,7 +234,6 @@ public class ArchiveController
             created = renderArchive( archive.get(), content.getBuildConfigId() );
         }
 
-        recordCompleted( content.getBuildConfigId() );
         return created;
     }
 
@@ -239,9 +277,15 @@ public class ArchiveController
         return treated.containsKey( buildConfigId );
     }
 
-    public String getStatus( String buildConfigId )
+    public String getStatus( final String buildConfigId )
     {
         return treated.get( buildConfigId );
+    }
+
+    public boolean isInProgress( final String buildConfigId )
+    {
+        return statusExists( buildConfigId ) && getStatus( buildConfigId ).equals(
+                ArchiveStatus.inProgress.getArchiveStatus() );
     }
 
     private void downloadArtifacts( final Map<String, HistoricalEntryDTO> entryDTOs,
@@ -533,12 +577,7 @@ public class ArchiveController
         List<File> contents = walkAllFiles( archiveDir );
         for ( File content : contents )
         {
-            if ( content.getName().endsWith( PART_ARCHIVE_SUFFIX ) )
-            {
-                treated.put( content.getName().split( PART_ARCHIVE_SUFFIX )[0],
-                             ArchiveStatus.inProgress.getArchiveStatus() );
-            }
-            else if ( content.getName().endsWith( ARCHIVE_SUFFIX ) )
+            if ( content.getName().endsWith( ARCHIVE_SUFFIX ) )
             {
                 treated.put( content.getName().split( ARCHIVE_SUFFIX )[0], ArchiveStatus.completed.getArchiveStatus() );
             }
