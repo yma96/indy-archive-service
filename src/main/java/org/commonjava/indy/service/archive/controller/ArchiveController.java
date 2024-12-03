@@ -103,9 +103,9 @@ public class ArchiveController
     private static final Set<String> CHECKSUMS = Collections.unmodifiableSet( new HashSet<String>()
     {
         {
-            add( ".md5" );
             add( ".sha1" );
             add( ".sha256" );
+            add( ".md5" );
         }
     } );
 
@@ -299,7 +299,7 @@ public class ArchiveController
             }
 
             String stored = bytesToHex( digest.digest() );
-            // only delete the zip once checksum is equaled
+            // only delete the zip once checksum is matched
             if ( stored.equals( checksum ) )
             {
                 zip.delete();
@@ -374,6 +374,7 @@ public class ArchiveController
         Map<String, List<String>> originalChecksumsMap = new HashMap<>();
         if ( originalTracked != null )
         {
+            logger.trace( "originalChecksumsMap generated for {}", content.getBuildConfigId() );
             Map<String, HistoricalEntryDTO> originalEntries = reader.readEntries( originalTracked );
             originalEntries.forEach( ( key, entry ) -> originalChecksumsMap.put( key, new ArrayList<>(
                     Arrays.asList( entry.getSha1(), entry.getSha256(), entry.getMd5() ) ) ) );
@@ -530,6 +531,7 @@ public class ArchiveController
         ZipEntry entry;
         while ( ( entry = inputStream.getNextEntry() ) != null )
         {
+            logger.trace( "entry path:" + entry.getName() );
             File outputFile = new File( contentBuildDir, entry.getName() );
             outputFile.getParentFile().mkdirs();
             try ( FileOutputStream outputStream = new FileOutputStream( outputFile ) )
@@ -554,7 +556,7 @@ public class ArchiveController
 
     private boolean validateChecksum( final String filePath, final List<String> current, final List<String> original )
     {
-        if ( CHECKSUMS.stream().anyMatch( suffix -> filePath.toLowerCase().endsWith( "." + suffix ) ) )
+        if ( CHECKSUMS.stream().anyMatch( suffix -> filePath.toLowerCase().endsWith( suffix ) ) )
         {
             // skip to validate checksum files
             return false;
@@ -563,14 +565,17 @@ public class ArchiveController
         {
             return false;
         }
+        // once sha1 is matched, skip downloading
         if ( original.get( 0 ) != null && original.get( 0 ).equals( current.get( 0 ) ) )
         {
             return true;
         }
+        // once sha256 is matched, skip downloading
         if ( original.get( 1 ) != null && original.get( 1 ).equals( current.get( 1 ) ) )
         {
             return true;
         }
+        // once md5 is matched, skip downloading
         return original.get( 2 ) != null && original.get( 2 ).equals( current.get( 2 ) );
     }
 
@@ -584,7 +589,7 @@ public class ArchiveController
             if ( target.exists() && validateChecksum( filePath, checksums, originalChecksums ) )
             {
                 logger.debug(
-                        "<<<Already existed in historical archive, and checksum equals, skip downloading, path: {}.",
+                        "<<<Already existed in historical archive, and checksum matches, skip downloading, path: {}.",
                         path );
                 return true;
             }
@@ -596,6 +601,11 @@ public class ArchiveController
             context.setCookieStore( cookieStore );
             final HttpGet request = new HttpGet( path );
             InputStream input = null;
+            if ( target.exists() )
+            {
+                // prevent the obsolete file still existed caused by http error
+                target.delete();
+            }
             try
             {
                 CloseableHttpResponse response = client.execute( request, context );
