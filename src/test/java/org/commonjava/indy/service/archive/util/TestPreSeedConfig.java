@@ -46,4 +46,10 @@ public class TestPreSeedConfig
         return Optional.of( 365l );
     }
 
+    @Override
+    public Optional<Integer> threadMultiplier()
+    {
+        return Optional.of( 4 );
+    }
+
 }

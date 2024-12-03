@@ -31,4 +31,7 @@ public interface PreSeedConfig
 
     @WithName( "not-used-days-cleanup" )
     Optional<Long> notUsedDaysCleanup();
+
+    @WithName( "thread-multiplier" )
+    Optional<Integer> threadMultiplier();
 }

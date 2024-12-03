@@ -72,6 +72,7 @@ import java.util.zip.ZipOutputStream;
 @ApplicationScoped
 public class ArchiveController
 {
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     public final static String EVENT_GENERATE_ARCHIVE = "generate-archive";
 
@@ -79,23 +80,11 @@ public class ArchiveController
 
     public final static String ARCHIVE_DIR = "/archive";
 
-    private final Logger logger = LoggerFactory.getLogger( getClass() );
-
     private final String ARCHIVE_SUFFIX = ".zip";
 
     private final String PART_SUFFIX = ".part";
 
     private final String PART_ARCHIVE_SUFFIX = PART_SUFFIX + ARCHIVE_SUFFIX;
-
-    private static final int threads = 4 * Runtime.getRuntime().availableProcessors();
-
-    private final ExecutorService generateExecutor =
-            Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
-                final Thread t = new Thread( r );
-                t.setName( "Generate-" + t.getName() );
-                t.setDaemon( true );
-                return t;
-            } );
 
     private static final Set<String> CHECKSUMS = Collections.unmodifiableSet( new HashSet<String>()
     {
@@ -117,7 +106,9 @@ public class ArchiveController
     @Inject
     ObjectMapper objectMapper;
 
-    private ExecutorService executorService;
+    private ExecutorService downloadExecutor;
+
+    private ExecutorService generateExecutor;
 
     private CloseableHttpClient client;
 
@@ -131,17 +122,22 @@ public class ArchiveController
     public void init()
             throws IOException
     {
-        int threads = 4 * Runtime.getRuntime().availableProcessors();
-        executorService = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
+        int threads = preSeedConfig.threadMultiplier().orElse( 4 ) * Runtime.getRuntime().availableProcessors();
+        downloadExecutor = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
             final Thread t = new Thread( r );
             t.setName( "Download-" + t.getName() );
+            t.setDaemon( true );
+            return t;
+        } );
+        generateExecutor = Executors.newFixedThreadPool( threads, ( final Runnable r ) -> {
+            final Thread t = new Thread( r );
+            t.setName( "Generate-" + t.getName() );
             t.setDaemon( true );
             return t;
         } );
 
         final PoolingHttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager();
         ccm.setMaxTotal( 500 );
-
         RequestConfig rc = RequestConfig.custom().build();
         client = HttpClients.custom().setConnectionManager( ccm ).setDefaultRequestConfig( rc ).build();
 
@@ -325,7 +321,7 @@ public class ArchiveController
             throws InterruptedException, ExecutionException, IOException
     {
         BasicCookieStore cookieStore = new BasicCookieStore();
-        ExecutorCompletionService<Boolean> executor = new ExecutorCompletionService<>( executorService );
+        ExecutorCompletionService<Boolean> executor = new ExecutorCompletionService<>( downloadExecutor );
 
         String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
         File dir = new File( contentBuildDir );
