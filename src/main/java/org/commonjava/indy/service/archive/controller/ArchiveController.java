@@ -20,6 +20,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
@@ -44,13 +45,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -110,14 +107,6 @@ public class ArchiveController
     } );
 
     private static final Map<String, Object> buildConfigLocks = new ConcurrentHashMap<>();
-
-    private static final String SHA_256 = "SHA-256";
-
-    private static final Long BOLCK_SIZE = 100 * 1024 * 1024L;
-
-    private static final String HEX_DIGITS = "0123456789abcdef";
-
-    private static final char[] HEX_ARRAY = HEX_DIGITS.toCharArray();
 
     @Inject
     HistoricalContentListReader reader;
@@ -283,51 +272,23 @@ public class ArchiveController
             return;
         }
 
-        try (FileChannel channel = new FileInputStream( zip ).getChannel())
+        try (FileInputStream fis = new FileInputStream( zip ))
         {
-            MessageDigest digest = MessageDigest.getInstance( SHA_256 );
-            long position = 0;
-            long size = channel.size();
+            String storedChecksum = DigestUtils.sha256Hex( fis );
 
-            while ( position < size )
-            {
-                long remaining = size - position;
-                long currentBlock = Math.min( remaining, BOLCK_SIZE );
-                MappedByteBuffer buffer = channel.map( FileChannel.MapMode.READ_ONLY, position, currentBlock );
-                digest.update( buffer );
-                position += currentBlock;
-            }
-
-            String stored = bytesToHex( digest.digest() );
             // only delete the zip once checksum is matched
-            if ( stored.equals( checksum ) )
+            if ( storedChecksum.equals( checksum ) )
             {
                 zip.delete();
                 logger.info( "Historical archive for build config id: {} is deleted, checksum {}.", buildConfigId,
-                             stored );
+                             storedChecksum );
             }
             else
             {
-                logger.info( "Don't delete the {} zip, transferred checksum {}, but stored checksum {}.", buildConfigId,
-                             checksum, stored );
+                logger.info( "Don't delete the {} zip, transferred checksum {}, but stored checksum {}.",
+                             buildConfigId, checksum, storedChecksum );
             }
         }
-        catch ( NoSuchAlgorithmException e )
-        {
-            logger.error( "No such algorithm SHA-256 Exception", e );
-        }
-    }
-
-    private String bytesToHex( byte[] hash )
-    {
-        char[] hexChars = new char[hash.length * 2];
-        for ( int i = 0; i < hash.length; i++ )
-        {
-            int v = hash[i] & 0xFF;
-            hexChars[i * 2] = HEX_ARRAY[v >>> 4];
-            hexChars[i * 2 + 1] = HEX_ARRAY[v & 0x0F];
-        }
-        return new String( hexChars );
     }
 
     public void cleanup()
