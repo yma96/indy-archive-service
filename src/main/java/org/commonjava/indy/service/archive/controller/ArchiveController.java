@@ -64,6 +64,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -153,44 +156,59 @@ public class ArchiveController
         IOUtils.closeQuietly( client, null );
     }
 
-    public void generate( HistoricalContentDTO content )
+    public boolean generate( HistoricalContentDTO content )
     {
         String buildConfigId = content.getBuildConfigId();
         Object lock = buildConfigLocks.computeIfAbsent( buildConfigId, k -> new Object() );
         synchronized ( lock )
         {
-            while ( isInProgress( buildConfigId ) )
+            if ( isInProgress( buildConfigId ) )
             {
                 logger.info( "There is already generation process in progress for buildConfigId {}, try lock wait.",
                              buildConfigId );
-                try
-                {
-                    lock.wait();
-                }
-                catch ( InterruptedException e )
-                {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
+                // Conflicted generation, just return with expected http response immediately
+                return false;
             }
-            recordInProgress( content.getBuildConfigId() );
-            generateExecutor.execute( () -> {
+
+            recordInProgress( buildConfigId );
+            Future<?> future = generateExecutor.submit( () -> {
                 try
                 {
                     doGenerate( content );
                 }
+                catch ( Exception e )
+                {
+                    // If error happens on generation, remove the status to make sure coming generation
+                    removeStatus( buildConfigId );
+                    logger.error( "Generation failed for buildConfigId {}", buildConfigId, e );
+                }
                 finally
                 {
-                    synchronized ( lock )
-                    {
-                        recordCompleted( content.getBuildConfigId() );
-                        buildConfigLocks.remove( buildConfigId );
-                        lock.notifyAll();
-                        logger.info( "lock released, buildConfigId {}", buildConfigId );
-                    }
+                    recordCompleted( buildConfigId );
+                    buildConfigLocks.remove( buildConfigId );
+                    logger.info( "lock released, buildConfigId {}", buildConfigId );
                 }
             } );
+            try
+            {
+                future.get( 60, TimeUnit.MINUTES );
+            }
+            catch ( TimeoutException e )
+            {
+                // If timeout happens on generation, cancel and remove the status to make sure coming generation
+                future.cancel( true );
+                removeStatus( buildConfigId );
+                logger.error( "Generation timeout for buildConfigId {}", buildConfigId, e );
+            }
+            catch ( InterruptedException | ExecutionException e )
+            {
+                // If future task level error happens on generation, cancel and remove the status to make sure coming generation
+                future.cancel( true );
+                removeStatus( buildConfigId );
+                logger.error( "Generation future task level failed for buildConfigId {}", buildConfigId, e );
+            }
         }
+        return true;
     }
 
     protected Boolean doGenerate( HistoricalContentDTO content )
@@ -622,15 +640,20 @@ public class ArchiveController
         }
     }
 
-    private void recordInProgress( String buildConfigId )
+    private void recordInProgress( final String buildConfigId )
     {
         treated.remove( buildConfigId );
         treated.put( buildConfigId, ArchiveStatus.inProgress.getArchiveStatus() );
     }
 
-    private void recordCompleted( String buildConfigId )
+    private void recordCompleted( final String buildConfigId )
     {
         treated.remove( buildConfigId );
         treated.put( buildConfigId, ArchiveStatus.completed.getArchiveStatus() );
+    }
+
+    private void removeStatus( final String buildConfigId )
+    {
+        treated.remove( buildConfigId );
     }
 }
