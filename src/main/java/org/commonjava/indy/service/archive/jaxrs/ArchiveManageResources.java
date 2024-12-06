@@ -51,7 +51,6 @@ import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
-import static jakarta.ws.rs.core.Response.Status.CONFLICT;
 import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 import static jakarta.ws.rs.core.Response.accepted;
 import static jakarta.ws.rs.core.Response.noContent;
@@ -75,7 +74,6 @@ public class ArchiveManageResources
 
     @Operation( description = "Generate archive based on tracked content" )
     @APIResponse( responseCode = "202", description = "The archive created request is accepted" )
-    @APIResponse( responseCode = "409", description = "The archive created request is conflicted" )
     @RequestBody( description = "The tracked content definition JSON", name = "body", required = true,
                   content = @Content( mediaType = APPLICATION_JSON,
                                       example = "{" + "\"buildConfigId\": \"XXX\"," + "\"downloads\":" + "[{"
@@ -106,17 +104,11 @@ public class ArchiveManageResources
             return fromResponse( message );
         }
 
-        boolean accepted = controller.generate( content );
+        controller.generate( content );
         return Uni.createFrom()
-                  .item( accepted ?
-                                 accepted().type( MediaType.TEXT_PLAIN )
-                                           .entity( "Archive created request is accepted." )
-                                           .build() :
-                                 Response.status( CONFLICT )
-                                         .type( MediaType.TEXT_PLAIN )
-                                         .entity(
-                                                 "Another generation with same build config ID was already in progress, request is conflicted." )
-                                         .build() );
+                  .item( accepted().type( MediaType.TEXT_PLAIN )
+                                   .entity( "Archive created request is accepted." )
+                                   .build() );
     }
 
     @Operation( description = "Get the status of generating archive based on build config Id" )

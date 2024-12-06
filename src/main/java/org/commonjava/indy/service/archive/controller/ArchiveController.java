@@ -156,7 +156,7 @@ public class ArchiveController
         IOUtils.closeQuietly( client, null );
     }
 
-    public boolean generate( HistoricalContentDTO content )
+    public void generate( HistoricalContentDTO content )
     {
         String buildConfigId = content.getBuildConfigId();
         Object lock = buildConfigLocks.computeIfAbsent( buildConfigId, k -> new Object() );
@@ -166,8 +166,8 @@ public class ArchiveController
             {
                 logger.info( "There is already generation process in progress for buildConfigId {}, try lock wait.",
                              buildConfigId );
-                // Conflicted generation, just return with expected http response immediately
-                return false;
+                // Conflicted generation, just return immediately
+                return;
             }
 
             recordInProgress( buildConfigId );
@@ -208,7 +208,6 @@ public class ArchiveController
                 logger.error( "Generation future task level failed for buildConfigId {}", buildConfigId, e );
             }
         }
-        return true;
     }
 
     protected Boolean doGenerate( HistoricalContentDTO content )
