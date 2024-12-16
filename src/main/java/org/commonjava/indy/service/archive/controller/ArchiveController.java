@@ -164,7 +164,7 @@ public class ArchiveController
         {
             if ( isInProgress( buildConfigId ) )
             {
-                logger.info( "There is already generation process in progress for buildConfigId {}, try lock wait.",
+                logger.info( "There is already generation process in progress for buildConfigId {}, this request will skip.",
                              buildConfigId );
                 // Conflicted generation, just return immediately
                 return;
@@ -192,7 +192,7 @@ public class ArchiveController
             } );
             try
             {
-                future.get( 60, TimeUnit.MINUTES );
+                future.get( preSeedConfig.generationTimeoutMinutes().orElse( 60 ), TimeUnit.MINUTES );
             }
             catch ( TimeoutException e )
             {

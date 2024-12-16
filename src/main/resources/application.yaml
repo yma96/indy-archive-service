@@ -48,3 +48,4 @@ pre-seed:
   storage-dir: data
   not-used-days-cleanup: 10
   thread-multiplier: 4
+  generation-timeout-minutes: 60

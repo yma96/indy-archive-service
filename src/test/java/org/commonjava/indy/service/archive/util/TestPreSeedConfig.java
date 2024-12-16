@@ -52,4 +52,9 @@ public class TestPreSeedConfig
         return Optional.of( 4 );
     }
 
+    public Optional<Integer> generationTimeoutMinutes()
+    {
+        return Optional.of( 60 );
+    }
+
 }

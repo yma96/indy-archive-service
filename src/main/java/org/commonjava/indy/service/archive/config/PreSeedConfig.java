@@ -34,4 +34,7 @@ public interface PreSeedConfig
 
     @WithName( "thread-multiplier" )
     Optional<Integer> threadMultiplier();
+
+    @WithName( "generation-timeout-minutes" )
+    Optional<Integer> generationTimeoutMinutes();
 }
