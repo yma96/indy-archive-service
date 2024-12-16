@@ -175,16 +175,17 @@ public class ArchiveController
                 try
                 {
                     doGenerate( content );
+                    recordCompleted( buildConfigId );
                 }
                 catch ( Exception e )
                 {
-                    // If error happens on generation, remove the status to make sure coming generation
+                    // If error happens on generation, remove the status to make sure following generation
                     removeStatus( buildConfigId );
+                    cleanupBCWorkspace( buildConfigId );
                     logger.error( "Generation failed for buildConfigId {}", buildConfigId, e );
                 }
                 finally
                 {
-                    recordCompleted( buildConfigId );
                     buildConfigLocks.remove( buildConfigId );
                     logger.info( "lock released, buildConfigId {}", buildConfigId );
                 }
@@ -195,16 +196,18 @@ public class ArchiveController
             }
             catch ( TimeoutException e )
             {
-                // If timeout happens on generation, cancel and remove the status to make sure coming generation
+                // If timeout happens on generation, cancel and remove the status to make sure following generation
                 future.cancel( true );
                 removeStatus( buildConfigId );
+                cleanupBCWorkspace( buildConfigId );
                 logger.error( "Generation timeout for buildConfigId {}", buildConfigId, e );
             }
             catch ( InterruptedException | ExecutionException e )
             {
-                // If future task level error happens on generation, cancel and remove the status to make sure coming generation
+                // If future task level error happens on generation, cancel and remove the status to make sure following generation
                 future.cancel( true );
                 removeStatus( buildConfigId );
+                cleanupBCWorkspace( buildConfigId );
                 logger.error( "Generation future task level failed for buildConfigId {}", buildConfigId, e );
             }
         }
@@ -212,8 +215,8 @@ public class ArchiveController
 
     protected Boolean doGenerate( HistoricalContentDTO content )
     {
-        logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE,
-                     content.getBuildConfigId() );
+        String buildConfigId = content.getBuildConfigId();
+        logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE, buildConfigId );
 
         Map<String, HistoricalEntryDTO> entryDTOs = reader.readEntries( content );
         Map<String, String> downloadPaths = new HashMap<>();
@@ -227,26 +230,24 @@ public class ArchiveController
         }
         catch ( final InterruptedException e )
         {
-            logger.error( "Artifacts downloading is interrupted, build config id: " + content.getBuildConfigId(), e );
+            logger.error( "Artifacts downloading is interrupted, build config id: " + buildConfigId, e );
             return false;
         }
         catch ( final ExecutionException e )
         {
-            logger.error( "Artifacts download execution manager failed, build config id: " + content.getBuildConfigId(),
-                          e );
+            logger.error( "Artifacts download execution manager failed, build config id: " + buildConfigId, e );
             return false;
         }
         catch ( final IOException e )
         {
-            logger.error( "Failed to generate historical archive from content, build config id: "
-                                          + content.getBuildConfigId(), e );
+            logger.error( "Failed to generate historical archive from content, build config id: " + buildConfigId, e );
             return false;
         }
 
         boolean created = false;
         if ( archive.isPresent() && archive.get().exists() )
         {
-            created = renderArchive( archive.get(), content.getBuildConfigId() );
+            created = renderArchive( archive.get(), buildConfigId );
         }
 
         return created;
@@ -269,7 +270,7 @@ public class ArchiveController
         File zip = new File( archiveDir, buildConfigId + ARCHIVE_SUFFIX );
         if ( zip.exists() )
         {
-            zip.delete();
+            Files.delete( zip.toPath() );
         }
         logger.info( "Historical archive for build config id: {} is deleted.", buildConfigId );
     }
@@ -292,14 +293,14 @@ public class ArchiveController
             // only delete the zip once checksum is matched
             if ( storedChecksum.equals( checksum ) )
             {
-                zip.delete();
+                Files.delete( zip.toPath() );
                 logger.info( "Historical archive for build config id: {} is deleted, checksum {}.", buildConfigId,
                              storedChecksum );
             }
             else
             {
-                logger.info( "Don't delete the {} zip, transferred checksum {}, but stored checksum {}.",
-                             buildConfigId, checksum, storedChecksum );
+                logger.info( "Don't delete the {} zip, transferred checksum {}, but stored checksum {}.", buildConfigId,
+                             checksum, storedChecksum );
             }
         }
     }
@@ -314,7 +315,27 @@ public class ArchiveController
             artifact.delete();
         }
         dir.delete();
-        logger.info( "Temporary workplace cleanup is finished." );
+        logger.info( "Temporary workplace {} cleanup is finished.", contentDir );
+    }
+
+    public void cleanupBCWorkspace( String buildConfigId )
+    {
+        String path = String.format( "%s/%s", contentDir, buildConfigId );
+        try
+        {
+            File dir = new File( path );
+            List<File> artifacts = walkAllFiles( path );
+            for ( File artifact : artifacts )
+            {
+                artifact.delete();
+            }
+            dir.delete();
+            logger.info( "Temporary workplace {} cleanup is finished.", path );
+        }
+        catch ( IOException e )
+        {
+            logger.error( "Failed to walk files on path {}", path, e );
+        }
     }
 
     public boolean statusExists( final String buildConfigId )
@@ -340,15 +361,16 @@ public class ArchiveController
         BasicCookieStore cookieStore = new BasicCookieStore();
         ExecutorCompletionService<Boolean> executor = new ExecutorCompletionService<>( downloadExecutor );
 
-        String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
-        File dir = new File( contentBuildDir );
-        dir.delete();
+        String buildConfigId = content.getBuildConfigId();
+        String contentBuildDir = String.format( "%s/%s", contentDir, buildConfigId );
+        // cleanup the build config content dir before download
+        cleanupBCWorkspace( buildConfigId );
 
-        HistoricalContentDTO originalTracked = unpackHistoricalArchive( contentBuildDir, content.getBuildConfigId() );
+        HistoricalContentDTO originalTracked = unpackHistoricalArchive( contentBuildDir, buildConfigId );
         Map<String, List<String>> originalChecksumsMap = new HashMap<>();
         if ( originalTracked != null )
         {
-            logger.trace( "originalChecksumsMap generated for {}", content.getBuildConfigId() );
+            logger.trace( "originalChecksumsMap generated for {}", buildConfigId );
             Map<String, HistoricalEntryDTO> originalEntries = reader.readEntries( originalTracked );
             originalEntries.forEach( ( key, entry ) -> originalChecksumsMap.put( key, new ArrayList<>(
                     Arrays.asList( entry.getSha1(), entry.getSha256(), entry.getMd5() ) ) ) );
@@ -384,21 +406,22 @@ public class ArchiveController
     private Optional<File> generateArchive( final List<String> paths, final HistoricalContentDTO content )
             throws IOException
     {
-        String contentBuildDir = String.format( "%s/%s", contentDir, content.getBuildConfigId() );
+        String buildConfigId = content.getBuildConfigId();
+        String contentBuildDir = String.format( "%s/%s", contentDir, buildConfigId );
         File dir = new File( contentBuildDir );
         if ( !dir.exists() )
         {
             return Optional.empty();
         }
 
-        final File part = new File( archiveDir, content.getBuildConfigId() + PART_ARCHIVE_SUFFIX );
+        final File part = new File( archiveDir, buildConfigId + PART_ARCHIVE_SUFFIX );
         part.getParentFile().mkdirs();
 
         logger.info( "Writing archive to: '{}'", part.getAbsolutePath() );
         ZipOutputStream zip = new ZipOutputStream( new FileOutputStream( part ) );
 
         // adding tracked file
-        paths.add( content.getBuildConfigId() );
+        paths.add( buildConfigId );
         byte[] buffer = new byte[1024];
         for ( String path : paths )
         {
@@ -448,8 +471,7 @@ public class ArchiveController
         }
         catch ( final SecurityException | IOException e )
         {
-            e.printStackTrace();
-            logger.error( "Failed to delete the obsolete archive file {}", target.getPath() );
+            logger.error( "Failed to delete the obsolete archive file {}", target.getPath(), e );
             return false;
         }
         target.getParentFile().mkdirs();
