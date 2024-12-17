@@ -47,7 +47,7 @@ public class ArchiveFileCleanup
     void cleanup()
             throws IOException
     {
-        logger.info( "Start not used archive files cleanup." );
+        logger.info( "<<<Start not used archive files cleanup." );
         String storeDir = preSeedConfig.storageDir().orElse( "data" );
         String archiveDir = String.format( "%s%s", storeDir, ARCHIVE_DIR );
 
@@ -66,7 +66,7 @@ public class ArchiveFileCleanup
             {
                 artifact.delete();
                 logger.info(
-                        "Not used archive files cleanup is finished for archive file: {}, not used days: {}, config: {}.",
+                        "<<<Not used archive files cleanup is finished for archive file: {}, not used days: {}, config: {}.",
                         artifact.getPath(), days, notUsedDays );
             }
         }

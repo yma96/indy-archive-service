@@ -187,7 +187,7 @@ public class ArchiveController
                 finally
                 {
                     buildConfigLocks.remove( buildConfigId );
-                    logger.info( "lock released, buildConfigId {}", buildConfigId );
+                    logger.info( "<<<Lock released for buildConfigId {}", buildConfigId );
                 }
             } );
             try
@@ -216,7 +216,7 @@ public class ArchiveController
     protected Boolean doGenerate( HistoricalContentDTO content )
     {
         String buildConfigId = content.getBuildConfigId();
-        logger.info( "Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE, buildConfigId );
+        logger.info( "<<<Handle generate event: {}, build config id: {}", EVENT_GENERATE_ARCHIVE, buildConfigId );
 
         Map<String, HistoricalEntryDTO> entryDTOs = reader.readEntries( content );
         Map<String, String> downloadPaths = new HashMap<>();
@@ -483,10 +483,15 @@ public class ArchiveController
     public List<File> walkAllFiles( String path )
             throws IOException
     {
-        List<File> contents = Files.walk( Paths.get( path ) )
-                                   .filter( Files::isRegularFile )
-                                   .map( Path::toFile )
-                                   .collect( Collectors.toList() );
+        List<File> contents = new ArrayList<>();
+        Path directoryPath = Paths.get( path );
+        if ( Files.exists( directoryPath ) )
+        {
+            contents = Files.walk( directoryPath )
+                            .filter( Files::isRegularFile )
+                            .map( Path::toFile )
+                            .collect( Collectors.toList() );
+        }
         return contents;
     }
 
