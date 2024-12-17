@@ -59,14 +59,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -171,7 +170,7 @@ public class ArchiveController
             }
 
             recordInProgress( buildConfigId );
-            Future<?> future = generateExecutor.submit( () -> {
+            CompletableFuture<Void> future = CompletableFuture.runAsync( () -> {
                 try
                 {
                     doGenerate( content );
@@ -189,27 +188,16 @@ public class ArchiveController
                     buildConfigLocks.remove( buildConfigId );
                     logger.info( "<<<Lock released for buildConfigId {}", buildConfigId );
                 }
-            } );
-            try
-            {
-                future.get( preSeedConfig.generationTimeoutMinutes().orElse( 60 ), TimeUnit.MINUTES );
-            }
-            catch ( TimeoutException e )
-            {
-                // If timeout happens on generation, cancel and remove the status to make sure following generation
-                future.cancel( true );
-                removeStatus( buildConfigId );
-                cleanupBCWorkspace( buildConfigId );
-                logger.error( "Generation timeout for buildConfigId {}", buildConfigId, e );
-            }
-            catch ( InterruptedException | ExecutionException e )
-            {
-                // If future task level error happens on generation, cancel and remove the status to make sure following generation
-                future.cancel( true );
-                removeStatus( buildConfigId );
-                cleanupBCWorkspace( buildConfigId );
-                logger.error( "Generation future task level failed for buildConfigId {}", buildConfigId, e );
-            }
+            }, generateExecutor );
+
+            future.orTimeout( preSeedConfig.generationTimeoutMinutes().orElse( 60 ), TimeUnit.MINUTES )
+                  .exceptionally( ex -> {
+                      // If timeout happens on generation, cancel and remove the status to make sure following generation
+                      removeStatus( buildConfigId );
+                      cleanupBCWorkspace( buildConfigId );
+                      logger.error( "Generation timeout for buildConfigId {}", buildConfigId );
+                      return null;
+                  } );
         }
     }
 
