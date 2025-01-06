@@ -162,12 +162,12 @@ public class ArchiveController
             recordInProgress( buildConfigId );
             if ( generateExecutor.isShutdown() || generateExecutor.isTerminated() )
             {
-                logger.info( "new generateExecutor" );
+                logger.debug( "New generateExecutor" );
                 newGenerateExecutor();
             }
             if ( downloadExecutor.isShutdown() || downloadExecutor.isTerminated() )
             {
-                logger.info( "new downloadExecutor" );
+                logger.debug( "New downloadExecutor" );
                 newDownloadExecutor();
             }
             CompletableFuture<Void> future = CompletableFuture.runAsync( () -> {
@@ -195,7 +195,7 @@ public class ArchiveController
                       // If timeout happens on generation, cancel and remove the status to make sure following generation
                       removeStatus( buildConfigId );
                       cleanupBCWorkspace( buildConfigId );
-                      logger.warn( "Generation timeout for buildConfigId {}, try to shut down the generation executor",
+                      logger.warn( "Generation timeout for buildConfigId {}, try to shut down the generation executor.",
                                    buildConfigId );
                       generateExecutor.shutdownNow();
                       downloadExecutor.shutdownNow();
@@ -310,7 +310,7 @@ public class ArchiveController
             artifact.delete();
         }
         dir.delete();
-        logger.info( "Temporary workplace {} cleanup is finished.", contentDir );
+        logger.info( "All temporary workplace {} cleanup is finished from cleanup request.", contentDir );
     }
 
     public void cleanupBCWorkspace( String buildConfigId )
