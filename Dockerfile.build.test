@@ -3,7 +3,7 @@ WORKDIR /build
 COPY . .
 RUN ls -al /opt
 RUN ls -al /workspace
-RUN ls -al /workspace/source
+RUN ls -al /workspace/output/source
 WORKDIR /build
 RUN mvn clean install -DskipTests
 
