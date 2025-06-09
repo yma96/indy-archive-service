@@ -1,6 +1,7 @@
 FROM maven:3.8.8-eclipse-temurin-17 AS build
 WORKDIR /build
-COPY . .
+COPY ../../ .
+WORKDIR /build
 RUN mvn clean install -DskipTests
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1295
