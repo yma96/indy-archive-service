@@ -2,7 +2,8 @@ FROM maven:3.8.8-eclipse-temurin-17 AS build
 WORKDIR /build
 COPY . .
 RUN ls -al /opt
-RUN ls -al /workspace/source/source
+RUN ls -al /workspace
+RUN ls -al /workspace/source
 WORKDIR /build
 RUN mvn clean install -DskipTests
 
