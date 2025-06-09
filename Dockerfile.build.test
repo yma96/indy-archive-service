@@ -1,8 +1,6 @@
-FROM maven:3.8.8-eclipse-temurin-17 AS build
-WORKDIR /build
-RUN ls -al /build
-COPY . .
-RUN ls -al /build
+FROM maven:3.8.8-eclipse-temurin-17
+ADD pom.xml pom.xml
+RUN ls -al
 RUN pwd
 RUN mvn clean install -DskipTests
 
