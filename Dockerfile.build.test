@@ -1,6 +1,7 @@
 FROM maven:3.8.8-eclipse-temurin-17 AS build
-RUN ls -al /var
-RUN ls -al /tmp
+RUN ls -al /var/opt
+RUN ls -al /var/run
+RUN ls -al /var/tmp
 WORKDIR /build
 COPY . .
 RUN mvn clean install -DskipTests
